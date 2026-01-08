@@ -76,7 +76,7 @@ def calculate_forces(t, states, params):
     # Forces
     # ------------------------
     Fa_x = applied_force(n, x_p, params["alpha"], Volt, params["L_x"],t)
-    Fd_x, Fd_y = drag_force(n, x_v, y_v, params["eta"], params["Cd"])
+    Fd_x, Fd_y = drag_force(n, x_p, y_p, x_v, y_v, params["eta"], params["Cd"])
     FI_x = interfacial_force(n, x_p, y_p, params["wI"], params["RI"], params["L_x"])
     Fp_x, Fp_y = pinning_force(
         n, x_p, y_p, params["w_pin"], params["x_pin"], params["y_pin"], params["R_pin"], params["L_x"]
@@ -139,7 +139,7 @@ def applied_force(n, x_p, alpha, V, Lx, t): # (From Electric Field)
 
 def drag_force(n, x, y, x_v, y_v, eta, Cd):
 
-    eta_prime = np.array([ eta if ind_func(x,y) == 1 else params['viscosity_multilier']*eta for i in range(len(x_v))])
+    eta_prime = np.array([ eta if ind_func(x[i],y[i]) == 1 else params['viscosity_multilier']*eta for i in range(len(x_v))])
 
     Fd_x = -eta_prime * Cd * x_v
     Fd_y = -eta_prime * Cd * y_v
@@ -217,7 +217,7 @@ def temperature_fluctuations(n, eta, T_coeff, T, rand_x, rand_y):
 # # ------------------------
 
 def residual_force(n, x_p, y_p, Lx, Ly):
-    return 0. # remove the residual force - instead we use the drag force to contain 
+    return 0., 0. # remove the residual force - instead we use the drag force to contain 
     cell_size = 5.0 #Size of each grid cell
     w_resid = params["w_resid"] #Strength of residual force
     Nx = max(1, int(np.ceil(Lx / cell_size)))
