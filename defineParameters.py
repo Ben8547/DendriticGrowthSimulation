@@ -9,7 +9,9 @@ import numpy as np
 from numpy.random import rand, seed
 from scipy.constants import Boltzmann, elementary_charge
 
-seed(10) # for consistant testing; may comment out for actual runs
+s = 10
+
+seed(s) # for consistant testing; may comment out for actual runs
 
 params = { # create a dictionary to hold parameters
     #--------------------------------
@@ -82,7 +84,14 @@ params = { # create a dictionary to hold parameters
     'nu' : 0.23, # Poisson's ratio of AlN, not sure if this should be used or be constant
     "k_C" : 8.99e9, # Coulomb's constant in N*m^2/C^2
     "q" : elementary_charge, # Elementary charge in C (charge of an electron / proton)
-    "r_Ag" : 126e-12 # Ionic radius of Ag in m
+    "r_Ag" : 126e-12, # Ionic radius of Ag in m
+
+    #-----------------------------------
+    # Stress induced void map parameters
+    #-----------------------------------
+    'n_regions': 20,
+    'blob_scale': 0.08,
+    'num_lattice_points': int(1e6)
 }
 
 # add to params
@@ -150,6 +159,7 @@ if not params['is_Voltage_constant']:
 
 params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons.gif"
 
+params["seed"] = s
 
 # if we run this file directly, do some stuff
 if __name__ == "__main__": # graph the voltage
