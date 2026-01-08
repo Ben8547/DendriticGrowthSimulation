@@ -1,7 +1,11 @@
 import numpy as np
 from defineParameters import params
 from calculateCurrent import calculate_current
-from time import sleep # for debugging
+#from time import sleep # for debugging
+from viscosity_field import make_globular_indicator
+
+
+ind_func = make_globular_indicator() # get a function to check viscocity state
 
 # Global simulation state
 tindex = 0
@@ -133,9 +137,12 @@ def applied_force(n, x_p, alpha, V, Lx, t): # (From Electric Field)
     return Fa_x
 
 
-def drag_force(n, x_v, y_v, eta, Cd):
-    Fd_x = -eta * Cd * x_v
-    Fd_y = -eta * Cd * y_v
+def drag_force(n, x, y, x_v, y_v, eta, Cd):
+
+    eta_prime = np.array([ eta if ind_func(x,y) == 1 else params['viscosity_multilier']*eta for i in range(len(x_v))])
+
+    Fd_x = -eta_prime * Cd * x_v
+    Fd_y = -eta_prime * Cd * y_v
 
     return Fd_x, Fd_y
 
@@ -210,6 +217,7 @@ def temperature_fluctuations(n, eta, T_coeff, T, rand_x, rand_y):
 # # ------------------------
 
 def residual_force(n, x_p, y_p, Lx, Ly):
+    return 0. # remove the residual force - instead we use the drag force to contain 
     cell_size = 5.0 #Size of each grid cell
     w_resid = params["w_resid"] #Strength of residual force
     Nx = max(1, int(np.ceil(Lx / cell_size)))

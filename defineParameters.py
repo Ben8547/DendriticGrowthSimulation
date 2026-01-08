@@ -91,7 +91,8 @@ params = { # create a dictionary to hold parameters
     #-----------------------------------
     'n_regions': 20,
     'blob_scale': 0.08,
-    'num_lattice_points': int(1e6)
+    'num_lattice_points': int(1e6),
+    "viscosity_multilier": 1000
 }
 
 # add to params
