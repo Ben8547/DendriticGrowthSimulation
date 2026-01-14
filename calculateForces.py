@@ -5,7 +5,7 @@ from calculateCurrent import calculate_current
 from viscosity_field import make_globular_indicator
 
 
-ind_func = make_globular_indicator() # get a function to check viscocity state
+ind_func = make_globular_indicator() # get a function to check viscocity state; index function of the void set
 
 # Global simulation state
 tindex = 0
@@ -75,7 +75,7 @@ def calculate_forces(t, states, params):
     # ------------------------
     # Forces
     # ------------------------
-    Fa_x = applied_force(n, x_p, params["alpha"], Volt, params["L_x"],t)
+    Fa_x = applied_force(n, x_p, y_p, params["alpha"], Volt, params["L_x"],t)
     Fd_x, Fd_y = drag_force(n, x_p, y_p, x_v, y_v, params["eta"], params["Cd"])
     FI_x = interfacial_force(n, x_p, y_p, params["wI"], params["RI"], params["L_x"])
     Fp_x, Fp_y = pinning_force(
@@ -124,15 +124,17 @@ def distances(x1, x2, y1, y2):
     return d, dx, dy
 
 
-def applied_force(n, x_p, alpha, V, Lx, t): # (From Electric Field)
+def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
     # Initialize force to zero
     Fa_x = np.zeros(n)
 
     # Logical index of particles inside domain
     inside = (x_p < Lx)
+    inside_y = y_p[inside]
 
     # Apply scaling only to particles within [0,Lx]
-    Fa_x[inside] = alpha[inside] * Volt / ((0.5) * Lx)
+    # only apply force to particle inside of a void
+    Fa_x[inside][ind_func(inside,inside_y) == 0] = alpha[inside][ind_func(inside,inside_y) == 0] * Volt / ((0.5) * Lx)
 
     return Fa_x
 
@@ -170,7 +172,6 @@ def interfacial_force(n, x_p, y_p, wI, RI, Lx):
     return FI_x
 
 
-import numpy as np
 
 def pinning_force(n, x_p, y_p, w_pin, x_pin, y_pin, R_pin, Lx):
     """
