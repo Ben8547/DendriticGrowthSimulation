@@ -73,7 +73,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     
     "is_Voltage_constant" : False,
-    "V" : 3,#3, # applies voltage
+    "V" : 9,#3, # applies voltage
 
     #--------------------------------
     #Residual Stress Parameters
@@ -92,7 +92,7 @@ params = { # create a dictionary to hold parameters
     'n_regions': 20,
     'blob_scale': 0.08,
     'num_lattice_points': int(1e6),
-    "viscosity_multilier": 100
+    "viscosity_multiplier": 2.5
 }
 
 # add to params
@@ -158,7 +158,7 @@ if not params['is_Voltage_constant']:
 # File Settings
 #--------------------------------
 
-params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons.gif"
+params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{params['viscosity_multiplier']}.gif"
 
 params["seed"] = s
 

@@ -139,7 +139,7 @@ def applied_force(n, x_p, alpha, V, Lx, t): # (From Electric Field)
 
 def drag_force(n, x, y, x_v, y_v, eta, Cd):
 
-    eta_prime = np.array([ eta if ind_func(x[i],y[i]) == 1 else params['viscosity_multilier']*eta for i in range(len(x_v))])
+    eta_prime = np.array([ eta if ind_func(x[i],y[i]) == 1 else params['viscosity_multiplier']*eta for i in range(len(x_v))])
 
     Fd_x = -eta_prime * Cd * x_v
     Fd_y = -eta_prime * Cd * y_v
