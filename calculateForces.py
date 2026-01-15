@@ -138,13 +138,11 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
 
     # Logical index of particles inside domain
     inside = (x_p < Lx)
-    inside_y = y_p[inside]
-    inside_x = x_p[inside]
 
     # Apply scaling only to particles within [0,Lx]
     # only apply force to particle inside of a void
-    out_void = (ind_func(inside_x,inside_y) == 0)
-    Fa_x[inside][out_void] = alpha[inside][out_void] * Volt / ((0.5) * Lx)
+    out_void = (ind_func(x_p,y_p) == 0)
+    Fa_x[inside & out_void] = alpha[inside & in_void] * Volt / ((0.5) * Lx)
 
     '''
     This section deals in adding back a force to those particles inside of the void if there 
@@ -152,15 +150,15 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
     We will set some radius (in params) for which there must be a particle *behind* the current particle in order for the field to proagate to the current particle
     If this condition is met, we will add the force back.
     '''
-    in_void = (ind_func(inside_x,inside_y) == 1)
-    n = len(Fa_x[inside][in_void]) #number of particles inside the voids
+    in_void = (ind_func(x_p,y_p) == 1)
+    n = len(Fa_x[inside & in_void]) #number of particles inside the voids
     for i in range(n):
 
-        dist_vec = distance(x_p[inside][in_void][i], x_p[x_p[inside][in_void][i] > x_p], y_p[inside][in_void][i], y_p[x_p[inside][in_void][i] > x_p]) # only comparing with those behind
+        dist_vec = distance(x_p[inside & in_void][i], x_p[x_p[inside & in_void][i] > x_p], y_p[inside & in_void][i], y_p[x_p[inside & in_void][i] > x_p]) # only comparing with those behind
         dist_vec = dist_vec[dist_vec > 0] # remove the current particle from the list
 
         if (dist_vec < r).any(): # There is a particle behind the current particle - within a small enough range
-            Fa_x[inside][in_void][i] = alpha[inside][in_void][i] * Volt / ((0.5) * Lx)
+            Fa_x[inside & in_void][i] = alpha[inside & in_void][i] * Volt / ((0.5) * Lx)
 
 
     return Fa_x

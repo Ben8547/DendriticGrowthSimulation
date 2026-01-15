@@ -127,7 +127,7 @@ params['alpha'] = rand(params['n']) * 1e5
 # Drag Force Parameters
 #--------------------------------
 
-params['eta'] = 1.#1 # viscosity
+params['eta'] = 0.5#1 # viscosity
 params["Cd"] = 50 # 1.8e4 # Drag Coefficient
 
 #--------------------------------
