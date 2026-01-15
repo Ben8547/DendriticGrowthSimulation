@@ -142,7 +142,7 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
     # Apply scaling only to particles within [0,Lx]
     # only apply force to particle inside of a void
     out_void = (ind_func(x_p,y_p) == 0)
-    Fa_x[inside & out_void] = alpha[inside & in_void] * Volt / ((0.5) * Lx)
+    Fa_x[inside & out_void] = alpha[inside & out_void] * Volt / ((0.5) * Lx)
 
     '''
     This section deals in adding back a force to those particles inside of the void if there 
