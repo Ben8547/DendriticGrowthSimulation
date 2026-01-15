@@ -162,7 +162,7 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
 
         for i in range(n):
 
-            dist_vec = distance(x_in_void[i], x_p[x_in_void > x_p], y_in_void[i], y_p[x_in_void > x_p]) # only comparing with those behind
+            dist_vec = distance(x_in_void[i], x_p[x_in_void[i] > x_p], y_in_void[i], y_p[x_in_void[i] > x_p]) # only comparing with those behind
             #dist_vec = dist_vec[dist_vec > 1e-14] # remove the current particle from the list; don't need this anymore since we only compare to those strictly behind
 
             if (dist_vec < r).any(): # There is a particle behind the current particle - within a small enough range

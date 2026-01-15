@@ -21,8 +21,8 @@ params = { # create a dictionary to hold parameters
     "BS" : False, # if True, uses custom bulirsch-stoer algorithm, if False it uses scipy.integrate.solve_ivp()
     'BS_error_per_unit_time': 1e-3,
     "scipy_tag" : "RK45", # should be a string for the method argument of scipy.integrate.solve_ivp()
-    "rtol" : 1e-3, # relative error param for scipy integration
-    "atol" : 1e-3, # absolute error param for scipy integration
+    "rtol" : 1e-2, # relative error param for scipy integration
+    "atol" : 1e-2, # absolute error param for scipy integration
 
     #--------------------------------
     # Basic Simulation Parameters
@@ -56,7 +56,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     'T_0' : 300, # Initial temperature in K
     'Q' : 1, # Thermal Energy [J]
-    'alpha' : 1e-5, # Thermal diffusivity in m^2/s
+    'alpha' : 1e-5, # Thermal diffusivity in m^2/s; there are two alpha parameters, this one seems to get deleated by the latter
     # Jasons code?
     'CT' : 0.24*5e-9, # !!! Heat capacity = specific heat capacity*mass [J/K] http://www2.ucdsb.on.ca/tiss/stretton/database/Specific_Heat_Capacity_Table.html -- check for gold
 
@@ -73,7 +73,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     
     "is_Voltage_constant" : False,
-    "V" : 3.,#3., # applies voltage
+    "V" : 6.,#3., # applies voltage
 
     #--------------------------------
     #Residual Stress Parameters
@@ -89,8 +89,8 @@ params = { # create a dictionary to hold parameters
     #-----------------------------------
     # Stress induced void map parameters
     #-----------------------------------
-    'n_regions': 20,
-    'blob_scale': 0.08,
+    'n_regions': 30,
+    'blob_scale': 0.05, #0.08
     'num_lattice_points': int(1e6),
     "viscosity_multiplier": 2.5
 }
@@ -98,7 +98,7 @@ params = { # create a dictionary to hold parameters
 # add to params
 
 # Applied force in void radius
-params["elec_transfer_radius"] = 0.01 * params["L_x"] # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
+params["elec_transfer_radius"] = 0.005 * params["L_x"] # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
 
 # simulation parameters
 params['dt'] = params["simulation_length"]/500.  # Time step for simulation; originally 2000
@@ -121,7 +121,7 @@ params['R_pin'] = rand(params['m'],1) * 10. # Pinning potential distance
 params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from https://www.spiraxsarco.com/learn-about-steam/steam-engineering-principles-and-heat-transfer/heat-transfer
 
 #applied electric field parameters
-params['alpha'] = 0.5e5 #rand(params['n']) * 1e5 #; I'm not sure why Sam had this set to be random values, let's keep it consistant for testing purposes at least
+params['alpha'] = rand(params['n']) * 1e5  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
 
 #--------------------------------
 # Drag Force Parameters

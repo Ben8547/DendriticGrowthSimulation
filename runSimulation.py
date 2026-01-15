@@ -110,19 +110,36 @@ def run_simulation(params):
         alpha=0.3,
     )
 
-    # ---- Pinning potential background ----
-    x = np.linspace(0, Lx, 100)
-    y = np.linspace(-Ly / 2, Ly / 2, 100)
-    X, Y = np.meshgrid(x, y)
-    U = np.zeros_like(X)
-    for k in range(len(params["w_pin"])):
-        dx = X - params["x_pin"][k]
-        dy = Y - params["y_pin"][k]
-        U += params["w_pin"][k] * np.exp(-(dx**2 + dy**2) / (params["R_pin"][k] ** 2))
+    showPP = False
 
-    pcm = ax1.pcolormesh(X, Y, U, cmap="pink", shading="auto", alpha=0.3)
-    cb = plt.colorbar(pcm, ax=ax1)
-    cb.set_label("Pinning Potential U")
+    if showPP:
+        # ---- Pinning potential background ----
+        x = np.linspace(0, Lx, 100)
+        y = np.linspace(-Ly / 2, Ly / 2, 100)
+        X, Y = np.meshgrid(x, y)
+        U = np.zeros_like(X)
+        for k in range(len(params["w_pin"])):
+            dx = X - params["x_pin"][k]
+            dy = Y - params["y_pin"][k]
+            U += params["w_pin"][k] * np.exp(-(dx**2 + dy**2) / (params["R_pin"][k] ** 2))
+
+        pcm = ax1.pcolormesh(X, Y, U, cmap="pink", shading="auto", alpha=0.3)
+        cb = plt.colorbar(pcm, ax=ax1)
+        cb.set_label("Pinning Potential U")
+    else: #show voids
+        from viscosity_field import make_globular_indicator
+        ind_func = make_globular_indicator()
+
+        x = np.linspace(0,params["L_x"],1000)
+        y = np.linspace(0,params["L_y"],1000)
+
+        X, Y = np.meshgrid(x,y)
+
+        Z = ind_func(X,Y)
+        pcm = ax1.pcolormesh(X, Y, Z, cmap="pink", shading="auto", alpha=0.3)
+
+        ax1.imshow(Z)
+        plt.colorbar(pcm, ax=ax1)
 
     # ---- Initialize particle positions ----
     particles, = ax1.plot(X_pos[0, :], Y_pos[0, :], "b.", markersize=4)

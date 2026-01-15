@@ -6,9 +6,11 @@ These fractures are then able to allow freer passage of conductive nanoparticles
 The way Sam set that up did not seem physical nor was it affecting any visible change in the nanoparticle and current dynamics.
 """
 
-from numpy import asarray, zeros_like, exp, mean
+from numpy import asarray, zeros_like, exp, mean, column_stack
 from numpy.random import default_rng
 from defineParameters import params
+from scipy.stats import beta # beta distrobution to push the voids towards the electrodes
+
 
 def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params["n_regions"], blob_scale=params["blob_scale"], seed=params["seed"]):
     """
@@ -34,7 +36,9 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
     rng = default_rng(seed)
 
     # Blob centers
-    centers = rng.uniform([0, 0], [Lx, Ly], size=(n_regions, 2))
+    x_centers = Lx * rng.beta(a=0.5, b=0.5, size=n_regions)# for a = b = 0.5 the centers will be more likely to appear at the edges
+    y_centers = (rng.uniform(0, 1, size=n_regions) - 0.5) * Ly
+    centers = column_stack([x_centers, y_centers])
 
     # Blob widths and amplitudes
     sigmas = blob_scale * min(Lx, Ly) * rng.uniform(0.7, 1.3, size=n_regions) # this determines how quickly the blob's influence decays
@@ -64,7 +68,7 @@ if __name__ == "__main__": # view the viscosity map if the script is run directl
     ind_func = make_globular_indicator()
 
     x = linspace(0,params["L_x"],1000)
-    y = linspace(0,params["L_y"],1000)
+    y = linspace(-params["L_y"]/2.,params["L_y"]/2.,1000)
 
     X, Y = meshgrid(x,y)
 
@@ -79,3 +83,8 @@ if __name__ == "__main__": # view the viscosity map if the script is run directl
     #print(ind_func([0,0.2*params["L_x"]],[0,0.2*params["L_x"]]))
 
     plt.show()
+
+    if False: # plot beta dist
+        rng1 = default_rng(1)
+        plt.hist(rng1.beta(a=0.5, b=0.5, size=1000))
+        plt.show()
