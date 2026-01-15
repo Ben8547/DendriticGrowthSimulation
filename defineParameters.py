@@ -73,7 +73,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     
     "is_Voltage_constant" : False,
-    "V" : 9,#3, # applies voltage
+    "V" : 3.,#3., # applies voltage
 
     #--------------------------------
     #Residual Stress Parameters
@@ -98,10 +98,10 @@ params = { # create a dictionary to hold parameters
 # add to params
 
 # Applied force in void radius
-params["elec_transfer_radius"] = 1. * params["L_x"]
+params["elec_transfer_radius"] = 0.01 * params["L_x"] # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
 
 # simulation parameters
-params['dt'] = params["simulation_length"]/500  # Time step for simulation; originally 2000
+params['dt'] = params["simulation_length"]/500.  # Time step for simulation; originally 2000
 params["tspan"] = np.arange(0, params["simulation_length"], params["dt"]) # Time span for simulation output
 
 # material and electrode dimensions
@@ -115,20 +115,20 @@ params['w_pin'] = np.concatenate((params['wp_attract'], params['wp_repulse']), a
 params['x_pin'] = rand(params['m'],1) * params['L_x'] # Randomly distribute pinning sites in x-direction
 params['y_pin'] = rand(params['m'],1) * params['L_y'] - 0.5*params['L_y'] # Randomly distribute pinning sites in y-direction
 #params['w_pin'] = 100 # Pinning potential amplitude
-params['R_pin'] = rand(params['m'],1) * 10 # Pinning potential distance
+params['R_pin'] = rand(params['m'],1) * 10. # Pinning potential distance
 
 # Jasons code?
-params["k"] = 420/params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from https://www.spiraxsarco.com/learn-about-steam/steam-engineering-principles-and-heat-transfer/heat-transfer
+params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from https://www.spiraxsarco.com/learn-about-steam/steam-engineering-principles-and-heat-transfer/heat-transfer
 
 #applied electric field parameters
-params['alpha'] = rand(params['n']) * 1e5 
+params['alpha'] = 0.5e5 #rand(params['n']) * 1e5 #; I'm not sure why Sam had this set to be random values, let's keep it consistant for testing purposes at least
 
 #--------------------------------
 # Drag Force Parameters
 #--------------------------------
 
-params['eta'] = 0.5#1 # viscosity
-params["Cd"] = 50 # 1.8e4 # Drag Coefficient
+params['eta'] = 1.#1 # viscosity
+params["Cd"] = 50. # 1.8e4 # Drag Coefficient
 
 #--------------------------------
 # Interfacial Potential Parameters

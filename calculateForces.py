@@ -136,29 +136,37 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
     # Initialize force to zero
     Fa_x = np.zeros(n)
 
-    # Logical index of particles inside domain
+    # Logical index of particles inside domain - prevents forward motion of particles outside of the bounded region
     inside = (x_p < Lx)
 
-    # Apply scaling only to particles within [0,Lx]
-    # only apply force to particle inside of a void
-    out_void = (ind_func(x_p,y_p) == 0)
-    Fa_x[inside & out_void] = alpha[inside & out_void] * Volt / ((0.5) * Lx)
+    if False: # Sam's orginal code; debug gate
+        Fa_x[inside] = alpha[inside] * Volt / ((0.5) * Lx)
 
-    '''
-    This section deals in adding back a force to those particles inside of the void if there 
-    - there a electromagnetic edge effects that we will ignore for now (i.e. purterbations to the field at the edge of a conductor)
-    We will set some radius (in params) for which there must be a particle *behind* the current particle in order for the field to proagate to the current particle
-    If this condition is met, we will add the force back.
-    '''
-    in_void = (ind_func(x_p,y_p) == 1)
-    n = len(Fa_x[inside & in_void]) #number of particles inside the voids
-    for i in range(n):
+    if True: # debug gate
+        # Apply scaling only to particles within [0,Lx]
+        # only apply force to particle inside of a void
+        out_void = (ind_func(x_p,y_p) == 0) # logcal index: particle is a void region <=> insulated from the electric field
+        Fa_x[inside & out_void] = alpha[inside & out_void] * Volt / ((0.5) * Lx) # assign force as normal if not in a void region and inside the domain
 
-        dist_vec = distance(x_p[inside & in_void][i], x_p[x_p[inside & in_void][i] > x_p], y_p[inside & in_void][i], y_p[x_p[inside & in_void][i] > x_p]) # only comparing with those behind
-        dist_vec = dist_vec[dist_vec > 0] # remove the current particle from the list
+        '''
+        This section deals in adding back a force to those particles inside of the void if there 
+        - there a electromagnetic edge effects that we will ignore for now (i.e. purterbations to the field at the edge of a conductor)
+        We will set some radius (in params) for which there must be a particle *behind* the current particle in order for the field to proagate to the current particle
+        If this condition is met, we will add the force back.
+        '''
+        in_void = (ind_func(x_p,y_p) == 1) # logical index of particles in a void
+        n = len(Fa_x[inside & in_void]) #number of particles inside the voids
 
-        if (dist_vec < r).any(): # There is a particle behind the current particle - within a small enough range
-            Fa_x[inside & in_void][i] = alpha[inside & in_void][i] * Volt / ((0.5) * Lx)
+        x_in_void = x_p[inside & in_void]
+        y_in_void = y_p[inside & in_void]
+
+        for i in range(n):
+
+            dist_vec = distance(x_in_void[i], x_p[x_in_void > x_p], y_in_void[i], y_p[x_in_void > x_p]) # only comparing with those behind
+            #dist_vec = dist_vec[dist_vec > 1e-14] # remove the current particle from the list; don't need this anymore since we only compare to those strictly behind
+
+            if (dist_vec < r).any(): # There is a particle behind the current particle - within a small enough range
+                Fa_x[inside & in_void][i] = alpha[inside & in_void][i] * Volt / ((0.5) * Lx) # if the electric field can propagate, 
 
 
     return Fa_x
@@ -166,7 +174,7 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
 
 def drag_force(n, x, y, x_v, y_v, eta, Cd):
 
-    eta_prime = np.array([ eta if ind_func(x[i],y[i]) == 1 else params['viscosity_multiplier']*eta for i in range(len(x_v))])
+    eta_prime = np.array([ eta if ind_func(x[i],y[i]) == 1 else params['viscosity_multiplier'] * eta for i in range(len(x_v))])
 
     Fd_x = -eta_prime * Cd * x_v
     Fd_y = -eta_prime * Cd * y_v
@@ -175,8 +183,9 @@ def drag_force(n, x, y, x_v, y_v, eta, Cd):
 
 
 def interfacial_force(n, x_p, y_p, wI, RI, Lx):
+    return 0. # I'm setting this force to zero becuase I can't think of physical force that would scale strictly off of distance like this 
     """
-    Compute interfacial force
+    Compute interfacial force  - direct translation from Sam's matlab files 
     """
     # Initialize force array
     FI_x = np.zeros(n)
@@ -190,7 +199,7 @@ def interfacial_force(n, x_p, y_p, wI, RI, Lx):
 
     FI_x[inside] = -(2 * wI / RI**2) * (term1 + term2)
 
-    # Debug print (optional)
+    # Debug
     #print(FI_x[0])
     #sleep(0.5)
 
@@ -199,6 +208,7 @@ def interfacial_force(n, x_p, y_p, wI, RI, Lx):
 
 
 def pinning_force(n, x_p, y_p, w_pin, x_pin, y_pin, R_pin, Lx):
+    return 0., 0. # for simplicity (temporary)
     """
     Vectorized pinning-force computation.
     Parameters follow MATLAB mapping exactly.
