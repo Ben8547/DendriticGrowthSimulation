@@ -7,6 +7,8 @@ from viscosity_field import make_globular_indicator
 
 ind_func = make_globular_indicator() # get a function to check viscocity state; index function of the void set
 
+r = params["elec_transfer_radius"]
+
 # Global simulation state
 tindex = 0
 V = params["V"]
@@ -123,6 +125,12 @@ def distances(x1, x2, y1, y2):
     d = np.sqrt(dx ** 2 + dy ** 2)
     return d, dx, dy
 
+def distance(x1, x2, y1, y2):
+    dx = x1 - x2
+    dy = y1 - y2
+    d = np.sqrt(dx ** 2 + dy ** 2)
+    return d
+
 
 def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
     # Initialize force to zero
@@ -135,6 +143,23 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
     # Apply scaling only to particles within [0,Lx]
     # only apply force to particle inside of a void
     Fa_x[inside][ind_func(inside,inside_y) == 0] = alpha[inside][ind_func(inside,inside_y) == 0] * Volt / ((0.5) * Lx)
+
+    '''
+    This section deals in adding back a force to those particles inside of the void if there 
+    - there a electromagnetic edge effects that we will ignore for now (i.e. purterbations to the field at the edge of a conductor)
+    We will set some radius (in params) for which there must be a particle *behind* the current particle in order for the field to proagate to the current particle
+    If this condition is met, we will add the force back.
+    '''
+
+    n = len(Fa_x[inside][ind_func(inside,inside_y) == 1]) #number of particles inside the voids
+    for i in range(n):
+
+        dist_vec = distance(x_p[inside][ind_func(inside,inside_y) == 1][i], x_p, y_p[inside][ind_func(inside,inside_y) == 1][i], y_p)
+        dist_vec = dist_vec[dist_vec > 0] # remove the current particle from the list
+
+        if (dist_vec < r).any(): # There is a particle behind the current particle - within a small enough range
+            Fa_x[inside][ind_func(inside,inside_y) == 1][i] = alpha[inside][ind_func(inside,inside_y) == 0][i] * Volt / ((0.5) * Lx)
+
 
     return Fa_x
 

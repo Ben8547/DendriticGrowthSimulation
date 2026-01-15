@@ -97,6 +97,9 @@ params = { # create a dictionary to hold parameters
 
 # add to params
 
+# Applied force in void radius
+params["elec_transfer_radius"] = 0.01 * params["L_x"]
+
 # simulation parameters
 params['dt'] = params["simulation_length"]/500  # Time step for simulation; originally 2000
 params["tspan"] = np.arange(0, params["simulation_length"], params["dt"]) # Time span for simulation output
