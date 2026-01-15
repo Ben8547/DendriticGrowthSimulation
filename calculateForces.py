@@ -64,9 +64,9 @@ def calculate_forces(t, states, params):
                 )
 
         tindex += 1
-        if tindex > 1000 and Volt != 0 and params["is_Voltage_constant"]: # after 1000 interations set voltage to 0; only do if the voltage is constant
+        '''if tindex > 1000 and Volt != 0 and params["is_Voltage_constant"]: # after 1000 interations set voltage to 0; only do if the voltage is constant
             Volt = 0
-            print("Voltage set to zero after 1000 iterations")
+            print("Voltage set to zero after 1000 iterations")''' # for relaxation models
 
         print(f"Time index {tindex} / {len(params['tspan'])}")
         print(f"Computed I at t = {tindex}, I = {I_last:.3e}")
@@ -139,10 +139,12 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
     # Logical index of particles inside domain
     inside = (x_p < Lx)
     inside_y = y_p[inside]
+    inside_x = x_p[inside]
 
     # Apply scaling only to particles within [0,Lx]
     # only apply force to particle inside of a void
-    Fa_x[inside][ind_func(inside,inside_y) == 0] = alpha[inside][ind_func(inside,inside_y) == 0] * Volt / ((0.5) * Lx)
+    out_void = (ind_func(inside_x,inside_y) == 0)
+    Fa_x[inside][out_void] = alpha[inside][out_void] * Volt / ((0.5) * Lx)
 
     '''
     This section deals in adding back a force to those particles inside of the void if there 
@@ -150,15 +152,15 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
     We will set some radius (in params) for which there must be a particle *behind* the current particle in order for the field to proagate to the current particle
     If this condition is met, we will add the force back.
     '''
-
-    n = len(Fa_x[inside][ind_func(inside,inside_y) == 1]) #number of particles inside the voids
+    in_void = (ind_func(inside_x,inside_y) == 1)
+    n = len(Fa_x[inside][in_void]) #number of particles inside the voids
     for i in range(n):
 
-        dist_vec = distance(x_p[inside][ind_func(inside,inside_y) == 1][i], x_p[x_p[inside][ind_func(inside,inside_y) == 1][i] > x_p], y_p[inside][ind_func(inside,inside_y) == 1][i], y_p[x_p[inside][ind_func(inside,inside_y) == 1][i] > x_p]) # only comparing with those behind
+        dist_vec = distance(x_p[inside][in_void][i], x_p[x_p[inside][in_void][i] > x_p], y_p[inside][in_void][i], y_p[x_p[inside][in_void][i] > x_p]) # only comparing with those behind
         dist_vec = dist_vec[dist_vec > 0] # remove the current particle from the list
 
         if (dist_vec < r).any(): # There is a particle behind the current particle - within a small enough range
-            Fa_x[inside][ind_func(inside,inside_y) == 1][i] = alpha[inside][ind_func(inside,inside_y) == 0][i] * Volt / ((0.5) * Lx)
+            Fa_x[inside][in_void][i] = alpha[inside][in_void][i] * Volt / ((0.5) * Lx)
 
 
     return Fa_x

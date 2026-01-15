@@ -98,7 +98,7 @@ params = { # create a dictionary to hold parameters
 # add to params
 
 # Applied force in void radius
-params["elec_transfer_radius"] = 0.01 * params["L_x"]
+params["elec_transfer_radius"] = 1. * params["L_x"]
 
 # simulation parameters
 params['dt'] = params["simulation_length"]/500  # Time step for simulation; originally 2000
@@ -127,7 +127,7 @@ params['alpha'] = rand(params['n']) * 1e5
 # Drag Force Parameters
 #--------------------------------
 
-params['eta'] = 1 # viscosity
+params['eta'] = 1.#1 # viscosity
 params["Cd"] = 50 # 1.8e4 # Drag Coefficient
 
 #--------------------------------
