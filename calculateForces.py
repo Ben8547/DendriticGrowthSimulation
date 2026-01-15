@@ -154,7 +154,7 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
     n = len(Fa_x[inside][ind_func(inside,inside_y) == 1]) #number of particles inside the voids
     for i in range(n):
 
-        dist_vec = distance(x_p[inside][ind_func(inside,inside_y) == 1][i], x_p, y_p[inside][ind_func(inside,inside_y) == 1][i], y_p)
+        dist_vec = distance(x_p[inside][ind_func(inside,inside_y) == 1][i], x_p[x_p[inside][ind_func(inside,inside_y) == 1][i] > x_p], y_p[inside][ind_func(inside,inside_y) == 1][i], y_p[x_p[inside][ind_func(inside,inside_y) == 1][i] > x_p]) # only comparing with those behind
         dist_vec = dist_vec[dist_vec > 0] # remove the current particle from the list
 
         if (dist_vec < r).any(): # There is a particle behind the current particle - within a small enough range
