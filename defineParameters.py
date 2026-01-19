@@ -36,7 +36,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
 
     'k_B' : Boltzmann, # Boltzmann's constant in J/K
-    "T_coeff" : 3000, # !!! Temperature coefficient [K^-1] -- this is a guess, not sure what to use here
+    "T_coeff" : 3000, # !!! Temperature coefficient [K^-1]
 
     #--------------------------------
     # Simulation Length and Particle Count
@@ -54,7 +54,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     # Heat related parameters
     #--------------------------------
-    'T_0' : 300, # Initial temperature in K
+    'T_0' : 600, #300 # Initial temperature in K
     'Q' : 1, # Thermal Energy [J]
     'alpha' : 1e-5, # Thermal diffusivity in m^2/s; there are two alpha parameters, this one seems to get deleated by the latter
     # Jasons code?
@@ -92,7 +92,8 @@ params = { # create a dictionary to hold parameters
     'n_regions': 30,
     'blob_scale': 0.05, #0.08
     'num_lattice_points': int(1e6),
-    "viscosity_multiplier": 2.5
+    "angle" : np.pi/2, # angle of the sector from which the electric field may be transmitted
+    "viscosity_multiplier": 2.5  #depreciated
 }
 
 # add to params

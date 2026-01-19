@@ -78,7 +78,7 @@ def calculate_forces(t, states, params):
     # Forces
     # ------------------------
     Fa_x = applied_force(n, x_p, y_p, params["alpha"], Volt, params["L_x"],t)
-    Fd_x, Fd_y = drag_force(n, x_p, y_p, x_v, y_v, params["eta"], params["Cd"])
+    Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["eta"], params["Cd"])
     FI_x = interfacial_force(n, x_p, y_p, params["wI"], params["RI"], params["L_x"])
     Fp_x, Fp_y = pinning_force(
         n, x_p, y_p, params["w_pin"], params["x_pin"], params["y_pin"], params["R_pin"], params["L_x"]
@@ -146,7 +146,9 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
         # Apply scaling only to particles within [0,Lx]
         # only apply force to particle inside of a void
         out_void = (ind_func(x_p,y_p) == 0) # logcal index: particle is a void region <=> insulated from the electric field
-        Fa_x[inside & out_void] = alpha[inside & out_void] * Volt / ((0.5) * Lx) # assign force as normal if not in a void region and inside the domain
+        good_angle = np.array([ np.abs(np.arctan((x_p[i]-x_p)/(y_p[i]-y_p))) for i in range(n) ]) # not vectorized unfortunately. Probably slows the programs considerably
+        good_angle = (good_angle < params["angle"]/2.)[0]
+        Fa_x[inside & (out_void & good_angle)] = alpha[inside & (out_void & good_angle)] * Volt / ((0.5) * Lx) # assign force as normal if not in a void region and inside the domain
 
         '''
         This section deals in adding back a force to those particles inside of the void if there 
@@ -172,9 +174,9 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
     return Fa_x
 
 
-def drag_force(n, x, y, x_v, y_v, eta, Cd):
+def drag_force(x, y, x_v, y_v, eta, Cd):
 
-    eta_prime = np.array([ eta if ind_func(x[i],y[i]) == 1 else params['viscosity_multiplier'] * eta for i in range(len(x_v))])
+    eta_prime = np.array([ 0 if ind_func(x[i],y[i]) == 1 else eta for i in range(len(x_v))])
 
     Fd_x = -eta_prime * Cd * x_v
     Fd_y = -eta_prime * Cd * y_v
