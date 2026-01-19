@@ -130,8 +130,8 @@ def run_simulation(params):
         from viscosity_field import make_globular_indicator
         ind_func = make_globular_indicator()
 
-        x = np.linspace(0,params["L_x"],1000)
-        y = np.linspace(0,params["L_y"],1000)
+        x = np.linspace(0.,params["L_x"],1000)
+        y = np.linspace(-params["L_y"]/2.,params["L_y"]/2.,1000)
 
         X, Y = np.meshgrid(x,y)
 
