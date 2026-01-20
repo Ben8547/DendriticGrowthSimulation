@@ -78,6 +78,8 @@ def calculate_forces(t, states, params):
     # Forces
     # ------------------------
     Fa_x = applied_force(n, x_p, y_p, params["alpha"], Volt, params["L_x"],t)
+    F_vdWx, F_vdWy = vdW_Force(x_p,y_p)
+    F_dipolex, F_dipoley = dipole_forces(x_p,y_p)
     Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["eta"], params["Cd"])
     FI_x = interfacial_force(n, x_p, y_p, params["wI"], params["RI"], params["L_x"])
     Fp_x, Fp_y = pinning_force(
@@ -96,8 +98,8 @@ def calculate_forces(t, states, params):
     fin_array = finishing_array(x_p, params["L_x"], params["fin"])
 
     # Total forces
-    forces_x = Fa_x + Fd_x + FI_x + Fp_x + Ft_x + Fr_x + Fc_x # resultant force in the x direction
-    forces_y = 0    + Fd_y + 0    + Fp_y + Ft_y + Fr_y + Fc_y # resultant force in the y direction
+    forces_x = Fa_x + Fd_x + FI_x + Fp_x + Ft_x + Fr_x + Fc_x + F_dipolex + F_vdWx # resultant force in the x direction
+    forces_y = 0.   + Fd_y + 0.   + Fp_y + Ft_y + Fr_y + Fc_y + F_dipoley + F_vdWy  # resultant force in the y direction
     
     # ------------------------
     # Solve for dx/dt
@@ -183,6 +185,115 @@ def drag_force(x, y, x_v, y_v, eta, Cd):
 
     return Fd_x, Fd_y
 
+from scipy.spatial.distance import pdist, squareform # pdist takes advantage of the symmetry of distance calculations
+
+def compute_dist_matrix(x, y): # compute a matrix of distances - sees use below
+    # Reshape to column vectors to enable broadcasting
+    # (N, 1) - (1, N) results in an (N, N) matrix of differences
+    dx = x[:, np.newaxis] - x[np.newaxis, :]
+    dy = y[:, np.newaxis] - y[np.newaxis, :]
+    
+    # Apply the Euclidean distance formula: sqrt(dx^2 + dy^2)
+    dist_matrix = np.sqrt(dx**2 + dy**2)
+    
+    return dist_matrix, dx, dy
+
+
+def vdW_Force(x,y, R=params["Average_particle_Radius"], A=params["Hamaker Constant"]):
+
+    '''
+    Docstring for vdW_Force
+
+    This computes the van der Waals attractive force between each particle.
+    
+    :param x: array if x positions
+    :param y: array of y positiosn
+    :param R: Radius of the silver nanoparticles (meters).
+    :param A: Hamaker constant (Joules).
+    '''
+
+    distance_matrix, dx, dy = compute_dist_matrix(x,y) # each row is a particles and the columns are its distance to each other particle. The diagonal is 0. The matrix is symmetric.
+    mask = distance_matrix > 2.001 * R  # Only compute for particles not in contact
+    f_mag = np.zeros_like(distance_matrix)
+    r = distance_matrix[mask]
+    r2, R2 = r**2, R**2
+    
+    # Derivative components of the Hamaker potential
+    term1 = (4. * R2 * r) / (r2 - 4. * R2)**2.
+    term2 = (4. * R2) / (r**3)
+    term3 = (8. * R2) / (r * (r2 - 4. * R2))
+    
+    # Scalar force magnitude (positive value indicates attraction in this logic)
+    f_mag[mask] = (A / 6.) * (term1 + term2 - term3)
+    
+    # 5. Project Magnitudes onto X and Y Axes
+    # To get the force ON particle i BY particle j:
+    # Since it is attractive, the force points from i toward j.
+    # The vector from i to j is (x_j - x_i), which is -dx[i, j].
+    fx_matrix = np.zeros_like(distance_matrix)
+    fy_matrix = np.zeros_like(distance_matrix)
+    fx_matrix[mask] = f_mag[mask] * (-dx[mask] / distance_matrix[mask])
+    fy_matrix[mask] = f_mag[mask] * (-dy[mask] / distance_matrix[mask])
+    
+    # 6. Sum across rows to get net force on each particle i
+    fx_net = np.sum(fx_matrix, axis=1)
+    fy_net = np.sum(fy_matrix, axis=1)
+    
+    return fx_net, fy_net
+
+def dipole_forces(x, y, R=params["Average_particle_Radius"], Ex=params["V"]/params["L_x"], Ey=0., eps_r=1.):
+    """
+    Computes the net dipole-dipole force on each particle. - correction to the electric field. This should prevent van der Waals forces from causing unbrideled aggregation and collision
+    
+    Parameters:
+    x, y   : np.array (m)
+    R      : float (m) - Radius of particles
+    Ex, Ey : float (V/m) - External Electric Field components
+    eps_r  : float - Relative permittivity of the medium
+    """
+    N = len(x)
+    eps_0 = params['eps_0']
+    eps_m = eps_r * eps_0
+    
+    # 1. Induced Dipole Moment (p = alpha * E)
+    # For silver (metal), the Clausius-Mossotti factor is ~1
+    p_mag_factor = 4. * np.pi * eps_m * (R**3)
+    px, py = p_mag_factor * Ex, p_mag_factor * Ey
+    p_dot_p = px**2. + py**2.
+    
+    # 2. Distance and Displacement
+    # r_vec is the vector from i to j: (x_j - x_i)
+    # Note: we use (x[j] - x[i]) which is -dx from our previous convention
+
+    dist, rx_mat, ry_mat = compute_dist_matrix(x,y)
+    
+    # 3. Mask for valid pairs
+    mask = dist > 2.001 * R
+    
+    # 4. Unit Vectors (r_hat)
+    ux = np.zeros_like(dist)
+    uy = np.zeros_like(dist)
+    ux[mask] = rx_mat[mask] / dist[mask]
+    uy[mask] = ry_mat[mask] / dist[mask]
+    
+    # 5. Dot Products (p_dot_r_hat)
+    p_dot_u = px * ux + py * uy
+    
+    # 6. Compute Force Components using the vector formula
+    # Force on i due to j
+    prefactor = np.zeros_like(dist)
+    prefactor[mask] = 3. / (4. * np.pi * eps_m * dist[mask]**4)
+    
+    # Term-by-term calculation for F_x and F_y
+    # F = prefactor * [ (p_dot_u)*px + (p_dot_u)*px + (p_dot_p)*ux - 5*(p_dot_u)*(p_dot_u)*ux ]
+    fx_matrix = prefactor * (2 * p_dot_u * px + p_dot_p * ux - 5 * (p_dot_u**2) * ux)
+    fy_matrix = prefactor * (2 * p_dot_u * py + p_dot_p * uy - 5 * (p_dot_u**2) * uy)
+    
+    # 7. Sum to get net force on each particle
+    fx_net = np.sum(fx_matrix, axis=1)
+    fy_net = np.sum(fy_matrix, axis=1)
+    
+    return fx_net, fy_net
 
 def interfacial_force(n, x_p, y_p, wI, RI, Lx):
     return 0. # I'm setting this force to zero becuase I can't think of physical force that would scale strictly off of distance like this 
