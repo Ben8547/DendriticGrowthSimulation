@@ -19,4 +19,4 @@ def extract_last_frame(gif_path, output_path):
         gif.save(output_path)
 
 # Example usage:
-extract_last_frame("dendrite_growth_simulation-pulses-newcurrent-20_electrons.gif", "last_frame_w-0-100elec.png")
+extract_last_frame("dendrite_growth_simulation-pulses-newcurrent-20_electrons-visc-2.5_vdW-2.0.png")

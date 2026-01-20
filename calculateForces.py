@@ -78,8 +78,7 @@ def calculate_forces(t, states, params):
     # Forces
     # ------------------------
     Fa_x = applied_force(n, x_p, y_p, params["alpha"], Volt, params["L_x"],t)
-    F_vdWx, F_vdWy = vdW_Force(x_p,y_p)
-    F_dipolex, F_dipoley = dipole_forces(x_p,y_p)
+    F_vdWx, F_vdWy = vdW_Force_AND_Dipole_Force(x_p,y_p)
     Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["eta"], params["Cd"])
     FI_x = interfacial_force(n, x_p, y_p, params["wI"], params["RI"], params["L_x"])
     Fp_x, Fp_y = pinning_force(
@@ -98,8 +97,8 @@ def calculate_forces(t, states, params):
     fin_array = finishing_array(x_p, params["L_x"], params["fin"])
 
     # Total forces
-    forces_x = Fa_x + Fd_x + FI_x + Fp_x + Ft_x + Fr_x + Fc_x + F_dipolex + F_vdWx # resultant force in the x direction
-    forces_y = 0.   + Fd_y + 0.   + Fp_y + Ft_y + Fr_y + Fc_y + F_dipoley + F_vdWy  # resultant force in the y direction
+    forces_x = Fa_x + Fd_x + FI_x + Fp_x + Ft_x + Fr_x + Fc_x + F_vdWx # resultant force in the x direction
+    forces_y = 0.   + Fd_y + 0.   + Fp_y + Ft_y + Fr_y + Fc_y + F_vdWy  # resultant force in the y direction
     
     # ------------------------
     # Solve for dx/dt
@@ -148,9 +147,7 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
         # Apply scaling only to particles within [0,Lx]
         # only apply force to particle inside of a void
         out_void = (ind_func(x_p,y_p) == 0) # logcal index: particle is a void region <=> insulated from the electric field
-        good_angle = np.array([ np.abs(np.arctan((x_p[i]-x_p)/(y_p[i]-y_p))) for i in range(n) ]) # not vectorized unfortunately. Probably slows the programs considerably
-        good_angle = (good_angle < params["angle"]/2.)[0]
-        Fa_x[inside & (out_void & good_angle)] = alpha[inside & (out_void & good_angle)] * Volt / ((0.5) * Lx) # assign force as normal if not in a void region and inside the domain
+        Fa_x[inside & (out_void)] = alpha[inside & (out_void)] * Volt / ((0.5) * Lx) # assign force as normal if not in a void region and inside the domain
 
         '''
         This section deals in adding back a force to those particles inside of the void if there 
@@ -163,6 +160,10 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
 
         x_in_void = x_p[inside & in_void]
         y_in_void = y_p[inside & in_void]
+
+        #good_angle = np.array([ np.abs(np.arctan((x_p[i]-x_p)/(y_p[i]-y_p))) for i in range(n) ]) # not vectorized unfortunately. Probably slows the programs considerably
+        #good_angle = (good_angle < params["angle"]/2.)[0]
+        # the above commented code was meant to restrict the angle of electric field transmission, but on further thought this is not physical.
 
         for i in range(n):
 
@@ -185,7 +186,7 @@ def drag_force(x, y, x_v, y_v, eta, Cd):
 
     return Fd_x, Fd_y
 
-from scipy.spatial.distance import pdist, squareform # pdist takes advantage of the symmetry of distance calculations
+#from scipy.spatial.distance import pdist, squareform # pdist takes advantage of the symmetry of distance calculations
 
 def compute_dist_matrix(x, y): # compute a matrix of distances - sees use below
     # Reshape to column vectors to enable broadcasting
@@ -199,8 +200,8 @@ def compute_dist_matrix(x, y): # compute a matrix of distances - sees use below
     return dist_matrix, dx, dy
 
 
-def vdW_Force(x,y, R=params["Average_particle_Radius"], A=params["Hamaker Constant"]):
-
+def vdW_Force_AND_Dipole_Force(x,y, R=params["Average_particle_Radius"], A=params["Hamaker Constant"], Ex=params["V"]/params["L_x"], Ey=0., eps_r=1.):
+    # since both use a distance matrix, combine them for efficiency - only compute matrix once
     '''
     Docstring for vdW_Force
 
@@ -238,19 +239,9 @@ def vdW_Force(x,y, R=params["Average_particle_Radius"], A=params["Hamaker Consta
     # 6. Sum across rows to get net force on each particle i
     fx_net = np.sum(fx_matrix, axis=1)
     fy_net = np.sum(fy_matrix, axis=1)
-    
-    return fx_net, fy_net
 
-def dipole_forces(x, y, R=params["Average_particle_Radius"], Ex=params["V"]/params["L_x"], Ey=0., eps_r=1.):
-    """
-    Computes the net dipole-dipole force on each particle. - correction to the electric field. This should prevent van der Waals forces from causing unbrideled aggregation and collision
-    
-    Parameters:
-    x, y   : np.array (m)
-    R      : float (m) - Radius of particles
-    Ex, Ey : float (V/m) - External Electric Field components
-    eps_r  : float - Relative permittivity of the medium
-    """
+    '''Now compute the Dipole Forces'''
+
     N = len(x)
     eps_0 = params['eps_0']
     eps_m = eps_r * eps_0
@@ -264,36 +255,31 @@ def dipole_forces(x, y, R=params["Average_particle_Radius"], Ex=params["V"]/para
     # 2. Distance and Displacement
     # r_vec is the vector from i to j: (x_j - x_i)
     # Note: we use (x[j] - x[i]) which is -dx from our previous convention
-
-    dist, rx_mat, ry_mat = compute_dist_matrix(x,y)
-    
-    # 3. Mask for valid pairs
-    mask = dist > 2.001 * R
     
     # 4. Unit Vectors (r_hat)
-    ux = np.zeros_like(dist)
-    uy = np.zeros_like(dist)
-    ux[mask] = rx_mat[mask] / dist[mask]
-    uy[mask] = ry_mat[mask] / dist[mask]
+    ux = np.zeros_like(distance_matrix)
+    uy = np.zeros_like(distance_matrix)
+    ux[mask] = dx[mask] / distance_matrix[mask]
+    uy[mask] = dy[mask] / distance_matrix[mask]
     
     # 5. Dot Products (p_dot_r_hat)
     p_dot_u = px * ux + py * uy
     
     # 6. Compute Force Components using the vector formula
     # Force on i due to j
-    prefactor = np.zeros_like(dist)
-    prefactor[mask] = 3. / (4. * np.pi * eps_m * dist[mask]**4)
+    prefactor = np.zeros_like(distance_matrix)
+    prefactor[mask] = 3. / (4. * np.pi * eps_m * distance_matrix[mask]**4)
     
     # Term-by-term calculation for F_x and F_y
     # F = prefactor * [ (p_dot_u)*px + (p_dot_u)*px + (p_dot_p)*ux - 5*(p_dot_u)*(p_dot_u)*ux ]
-    fx_matrix = prefactor * (2 * p_dot_u * px + p_dot_p * ux - 5 * (p_dot_u**2) * ux)
-    fy_matrix = prefactor * (2 * p_dot_u * py + p_dot_p * uy - 5 * (p_dot_u**2) * uy)
+    fx_matrix = prefactor * (2. * p_dot_u * px + p_dot_p * ux - 5. * (p_dot_u**2) * ux)
+    fy_matrix = prefactor * (2. * p_dot_u * py + p_dot_p * uy - 5. * (p_dot_u**2) * uy)
     
     # 7. Sum to get net force on each particle
-    fx_net = np.sum(fx_matrix, axis=1)
-    fy_net = np.sum(fy_matrix, axis=1)
+    fx_net_di = np.sum(fx_matrix, axis=1)
+    fy_net_di = np.sum(fy_matrix, axis=1)
     
-    return fx_net, fy_net
+    return fx_net+fx_net_di, fy_net+fy_net_di
 
 def interfacial_force(n, x_p, y_p, wI, RI, Lx):
     return 0. # I'm setting this force to zero becuase I can't think of physical force that would scale strictly off of distance like this 

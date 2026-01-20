@@ -49,7 +49,7 @@ params = { # create a dictionary to hold parameters
     # Initial position box and material size
     #--------------------------------
     'L_x' : 60, #100, # Size of material in x-direction
-    'L_y' : 100, # Size of material in y-direction
+    'L_y' : 50, #100, # Size of material in y-direction
 
     #--------------------------------
     # Heat related parameters
@@ -165,7 +165,7 @@ if not params['is_Voltage_constant']:
 # File Settings
 #--------------------------------
 
-params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{params['viscosity_multiplier']}_vdW-{params['Hamaker Constant']}.gif"
+params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{params['viscosity_multiplier']}_vdW-{params['Hamaker Constant']}_Ly-{params["L_y"]}.gif"
 
 params["seed"] = s
 
