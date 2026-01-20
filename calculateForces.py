@@ -164,14 +164,13 @@ def applied_force(n, x_p, y_p, alpha, V, Lx, t): # (From Electric Field)
         #good_angle = np.array([ np.abs(np.arctan((x_p[i]-x_p)/(y_p[i]-y_p))) for i in range(n) ]) # not vectorized unfortunately. Probably slows the programs considerably
         #good_angle = (good_angle < params["angle"]/2.)[0]
         # the above commented code was meant to restrict the angle of electric field transmission, but on further thought this is not physical.
-
+        m = sum(mask := (x_in_void[i] > x_p).astype(int))
+        dist_mat = np.zeros((m,m))
         for i in range(n):
-
-            dist_vec = distance(x_in_void[i], x_p[x_in_void[i] > x_p], y_in_void[i], y_p[x_in_void[i] > x_p]) # only comparing with those behind
+            dist_mat[:,i] = distance(x_in_void[i], x_p[x_in_void[i] > x_p], y_in_void[i], y_p[x_in_void[i] > x_p]) # only comparing with those behind
             #dist_vec = dist_vec[dist_vec > 1e-14] # remove the current particle from the list; don't need this anymore since we only compare to those strictly behind
 
-            if (dist_vec < r).any(): # There is a particle behind the current particle - within a small enough range
-                Fa_x[inside & in_void][i] = alpha[inside & in_void][i] * Volt / ((0.5) * Lx) # if the electric field can propagate, 
+        Fa_x[inside & in_void] = [alpha[inside & in_void][i] * Volt / ((0.5) * Lx) if (dist_mat[:,i] < r).any() else 0. for i in range(n) ] # if the electric field can propagate, 
 
 
     return Fa_x
