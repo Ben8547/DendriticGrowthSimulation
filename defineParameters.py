@@ -93,7 +93,7 @@ params = { # create a dictionary to hold parameters
     'blob_scale': 0.05, #0.08
     'num_lattice_points': int(1e6),
     "angle" : np.pi/2, # angle of the sector from which the electric field may be transmitted
-    "viscosity_multiplier": 2.5  #depreciated
+    "viscosity_multiplier": 2.5
 }
 
 # add to params
