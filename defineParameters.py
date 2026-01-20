@@ -54,7 +54,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     # Heat related parameters
     #--------------------------------
-    'T_0' : 600, #300 # Initial temperature in K
+    'T_0' : 295., #300 # Initial temperature in K
     'Q' : 1, # Thermal Energy [J]
     'alpha' : 1e-5, # Thermal diffusivity in m^2/s; there are two alpha parameters, this one seems to get deleated by the latter
     # Jasons code?
@@ -125,7 +125,7 @@ params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from 
 params['alpha'] = rand(params['n']) * 1e5  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
 params['eps_0'] = 8.854e-12
 params["Average_particle_Radius"] = params["L_x"] / 100. 
-params["Hamaker Constant"] = 2. #1. # van der Waals force constant - depends upon material
+params["Hamaker Constant"] = 1. #1. # van der Waals force constant - depends upon material
 
 #--------------------------------
 # Drag Force Parameters
