@@ -142,7 +142,7 @@ def run_simulation(params):
         plt.colorbar(pcm, ax=ax1)
 
     # ---- Initialize particle positions ----
-    particles, = ax1.plot(X_pos[0, :], Y_pos[0, :], "b.", markersize=4)
+    particles, = ax1.plot(X_pos[0, :], Y_pos[0, :], "b.", markersize=2)
 
     # ---- Bottom plot: current vs time ----
     ax2.set_xlim([t[0], t[-1]])
