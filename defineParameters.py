@@ -99,7 +99,7 @@ params = { # create a dictionary to hold parameters
 # add to params
 
 # Applied force in void radius
-params["elec_transfer_radius"] = 0.05 * params["L_x"] # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
+params["elec_transfer_radius"] = params["L_x"]/15. # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
 
 # simulation parameters
 params['dt'] = params["simulation_length"]/500.  # Time step for simulation; originally 2000
@@ -125,7 +125,7 @@ params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from 
 params['alpha'] = rand(params['n']) * 1e5  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
 params['eps_0'] = 8.854e-12
 params["Average_particle_Radius"] = params["L_x"] / 100. 
-params["Hamaker Constant"] = 1.
+params["Hamaker Constant"] = 2. #1. # van der Waals force constant - depends upon material
 
 #--------------------------------
 # Drag Force Parameters
@@ -165,7 +165,7 @@ if not params['is_Voltage_constant']:
 # File Settings
 #--------------------------------
 
-params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{params['viscosity_multiplier']}.gif"
+params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{params['viscosity_multiplier']}_vdW-{params['Hamaker Constant']}.gif"
 
 params["seed"] = s
 
