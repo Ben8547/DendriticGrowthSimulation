@@ -230,7 +230,7 @@ def compute_dist_matrix(x, y): # compute a matrix of distances - sees use below;
     return dist_matrix, dx, dy
 
 
-def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"], A=params["Hamaker Constant"], Ex=params["V"]/params["L_x"], Ey=0., eps_r=1.):
+def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"], A=params["Hamaker Constant"], Ex=params["V"]/params["L_x"], Ey=0., eps_r=150.):
     # since both use a distance matrix, combine them for efficiency - only compute matrix once
     '''
     Docstring for vdW_Force

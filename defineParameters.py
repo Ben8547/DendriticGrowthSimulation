@@ -42,14 +42,14 @@ params = { # create a dictionary to hold parameters
     # Simulation Length and Particle Count
     # --------------------------------
     
-    "n" : 500, # Number of particles
+    "n" : 350, #500 # Number of particles
     "simulation_length" : 0.6, #6, # in seconds
 
     #--------------------------------
     # Initial position box and material size
     #--------------------------------
     'L_x' : 60, #100, # Size of material in x-direction
-    'L_y' : 50, #100, # Size of material in y-direction
+    'L_y' : 45, #100, # Size of material in y-direction
 
     #--------------------------------
     # Heat related parameters
@@ -99,7 +99,7 @@ params = { # create a dictionary to hold parameters
 # add to params
 
 # Applied force in void radius
-params["elec_transfer_radius"] = params["L_x"]/15. # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
+params["elec_transfer_radius"] = params["L_x"]/150. # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
 
 # simulation parameters
 params['dt'] = params["simulation_length"]/500.  # Time step for simulation; originally 2000
@@ -124,14 +124,14 @@ params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from 
 #applied electric field parameters
 params['alpha'] = rand(params['n']) * 1e5  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
 params['eps_0'] = 8.854e-12
-params["Average_particle_Radius"] = params["L_x"] / 100. 
-params["Hamaker Constant"] = 1. #1. # van der Waals force constant - depends upon material
+params["Average_particle_Radius"] = params["elec_transfer_radius"]/2. # since the particles must touch for electric transfer
+params["Hamaker Constant"] = 0.5 #1. # van der Waals force constant - depends upon material
 
 #--------------------------------
 # Drag Force Parameters
 #--------------------------------
 
-params['eta'] = 1.#1 # viscosity
+params['eta'] = 1.5 #1 # viscosity
 params["Cd"] = 50. # 1.8e4 # Drag Coefficient
 
 #--------------------------------

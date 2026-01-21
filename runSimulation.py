@@ -35,7 +35,7 @@ def run_simulation(params):
     # ------------------------
     # Randomize initial particle positions
     # ------------------------
-    xo = 10 * np.random.rand(n)
+    xo = 2.5 * np.random.rand(n)  - 2.5 # start behind the device - should prevent starting in voids
     yo = electrode_height * np.random.rand(n) - 0.5 * electrode_height
 
     # ------------------------
