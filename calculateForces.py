@@ -243,12 +243,14 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     :param A: Hamaker constant (Joules).
     '''
 
+    eps0 = params["eps_0"]
+
     x = coords[:,0]
     y = coords[:,1]
 
     # Define cutoffs (forces are negligible beyond these)
     # vdW dies at ~1/r^7, Dipole at ~1/r^4
-    cutoff = 10 * R
+    cutoff = 10. * R
 
     # Find all pairs within cutoff. Returns (i, j) indices of the coords matrix
     pairs = tree.query_pairs(r=cutoff, output_type='ndarray')
@@ -261,7 +263,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     dist2 = dx**2 + dy**2
     dist = np.sqrt(dist2)
 
-    mask = dist > 2.001 * R  # Only compute for particles not in contact
+    mask = dist > 2. * R  # Only compute for particles not in contact
 
     i, j, dx, dy, dist, dist2 = i[mask], j[mask], dx[mask], dy[mask], dist[mask], dist2[mask]
 
@@ -271,21 +273,40 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     term1 = (4. * R2 * dist) / (dist2 - 4. * R2)**2
     term2 = (4. * R2) / (dist**3)
     term3 = (8. * R2) / (dist * (dist2 - 4. * R2))
-    f_vdW_mag = (A / 6.) * (term1 + term2 - term3)
+    f_vdW_mag = -(A / 6.) * (term1 + term2 - term3)
 
     # Dipole Calculation
 
-    p_mag_factor = 4. * np.pi * eps_r * (R**3.)
-    px, py = p_mag_factor * Ex, p_mag_factor * Ey
-    p_dot_p = px**2. + py**2.
-    
-    ux, uy = dx/dist, dy/dist
+    p_mag = 4. * np.pi * eps0 * eps_r * R**3
+    px = p_mag * Ex
+    py = p_mag * Ey
+
+    # Unit vectors
+    ux = dx / dist
+    uy = dy / dist
+
+    # Dot products
     p_dot_u = px * ux + py * uy
-    
-    dipole_pre = 3. / (4. * np.pi * eps_r * dist**4.)
-    # Vectorized force on i due to j
-    fx_dipole = dipole_pre * (2. * p_dot_u * px + p_dot_p * ux - 5. * (p_dot_u**2.) * ux)
-    fy_dipole = dipole_pre * (2. * p_dot_u * py + p_dot_p * uy - 5. * (p_dot_u**2.) * uy)
+    p_dot_p = px**2 + py**2
+
+    # Softened distance to prevent blow-up
+    r_soft = np.maximum(dist, 2.2 * R)
+
+    # Dipole force prefactor
+    dipole_pre = 3. / (4. * np.pi * eps0 * eps_r * r_soft**4)
+
+    # Force components
+    fx_dipole = dipole_pre * (
+        p_dot_u * px +
+        p_dot_p * ux -
+        5. * (p_dot_u**2) * ux
+    )
+
+    fy_dipole = dipole_pre * (
+        p_dot_u * py +
+        p_dot_p * uy -
+        5. * (p_dot_u**2) * uy
+    )
 
     # Combine and project force vectors
 
