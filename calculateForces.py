@@ -269,15 +269,34 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
 
     # van der Waals Calculation
     
-    R2 = R**2.
-    term1 = (4. * R2 * dist) / (dist2 - 4. * R2)**2
-    term2 = (4. * R2) / (dist**3)
-    term3 = (8. * R2) / (dist * (dist2 - 4. * R2))
-    f_vdW_mag = -(A / 6.) * (term1 + term2 - term3)
+    h = dist - 2.0 * R # Surface-to-surface separation
+
+    h_min = 1e-10 * R
+    h = np.maximum(h, h_min) # Prevent numerical blow-up (we will be dividing by a power of h later on)
+
+    # Hamaker (Derjaguin) vdW force magnitude 
+    F_vdW_mag = - A * R / (6.0 * h**2)
+
+    # Unit vectors
+    ex = dx / dist
+    ey = dy / dist
+
+    # Force components on particle i due to j
+    Fx_vdW = F_vdW_mag * ex
+    Fy_vdW = F_vdW_mag * ey
+
+    # Accumulate forces (Newton's 3rd law)
+    f_vdW_x = np.zeros(len(x))
+    f_vdW_y = np.zeros(len(y))
+
+    np.add.at(f_vdW_x, i,  Fx_vdW) # add forces to their arrays
+    np.add.at(f_vdW_y, i,  Fy_vdW)
+    np.add.at(f_vdW_x, j, -Fx_vdW)
+    np.add.at(f_vdW_y, j, -Fy_vdW)
 
     # Dipole Calculation
 
-    p_mag = 4. * np.pi * eps0 * eps_r * R**3
+    ''' p_mag = 4. * np.pi * eps0 * eps_r * R**3
     px = p_mag * Ex
     py = p_mag * Ey
 
@@ -306,12 +325,16 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
         p_dot_u * py +
         p_dot_p * uy -
         5. * (p_dot_u**2) * uy
-    )
+    )'''
+    ux = dx / dist
+    uy = dy / dist
+    fx_dipole = 0.
+    fy_dipole = 0.
 
     # Combine and project force vectors
 
-    fx_total_pairs = fx_dipole + (f_vdW_mag * ux)
-    fy_total_pairs = fy_dipole + (f_vdW_mag * uy)
+    fx_total_pairs = fx_dipole + (f_vdW_x)
+    fy_total_pairs = fy_dipole + (f_vdW_y)
 
     fx_net = np.zeros(len(x))
     fy_net = np.zeros_like(fx_net)
