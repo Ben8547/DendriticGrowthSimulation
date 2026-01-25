@@ -168,15 +168,14 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
         force_val = alpha * Volt / (0.5 * Lx)
 
         # Identify indices of particles in a void
-        void_indices = np.where(inside & is_void)[0]
+        void_indices = np.where(inside & is_void)[0] # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
         
         # query_ball_point finds all particles within radius 'r' for each void particle
-        # indices_list will be a list of lists: [[neighbors of void 1], [neighbors of void 2], ...]
-        neighbors_list = kdTree.query_ball_point(coords[void_indices], r)
+        neighbors_list = kdTree.query_ball_point(coords[void_indices], r) # this returns an array of lists. The list in the ith element of the array contains the indicies of the points within a distance r of the ith particle
         
         for i, void_idx in enumerate(void_indices):
             # neighbors_list[i] contains indices of all particles within radius r
-            potential_neighbors = np.array(neighbors_list[i])
+            potential_neighbors = np.array(neighbors_list[i]) # neigbors of the ith particle
             
             # only care about neighbors that are strictly behind (smaller x). also exclude the particle itself (distance 0)
             xi = x_p[void_idx]
@@ -242,6 +241,9 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     :param R: Radius of the silver nanoparticles (meters).
     :param A: Hamaker constant (Joules).
     '''
+
+    # In the Hamacker model, the van der Waals force between two spheres of radius R1 and R2 with separation r is (A)(R1)(R2) / 6(R1+R2)r^6
+    # both particles feels the force reciprically via Newton's third law
 
     eps0 = params["eps_0"]
 
