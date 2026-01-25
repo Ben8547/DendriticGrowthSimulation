@@ -288,11 +288,15 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     Fx_vdW = F_vdW_mag * ex
     Fy_vdW = F_vdW_mag * ey
 
-    # Accumulate forces (Newton's 3rd law)
+    # Now we determine the sign of each component of the force; each component need to point towards the other particle
+    behind = (dx < 0) # True iff F_x_i is positive in that pair
+    below = (dy < 0) # True iff F_y_i is positive in that pair
+
+    # Accumulate forces
     f_vdW_x = np.zeros(len(x))
     f_vdW_y = np.zeros(len(y))
 
-    np.add.at(f_vdW_x, i,  Fx_vdW) # add forces to their arrays
+    np.add.at(f_vdW_x, i,  Fx_vdW) # add forces to their arrays vectorized for efficiency; replaced old loop
     np.add.at(f_vdW_y, i,  Fy_vdW)
     np.add.at(f_vdW_x, j, -Fx_vdW)
     np.add.at(f_vdW_y, j, -Fy_vdW)
