@@ -372,7 +372,7 @@ def interfacial_force(n, x_p, y_p, wI, RI, Lx):
 
 
 def pinning_force(n, x_p, y_p, w_pin, x_pin, y_pin, R_pin, Lx):
-    return 0., 0. # for simplicity (temporary)
+    return 0., 0. # for simplicity (temporary) - on further consideration, the pinning potential is endemic to semiconductors, of which these memristor are not made of. Thus I fail t understand why we ever had a pinning potential.
     """
     Vectorized pinning-force computation.
     Parameters follow MATLAB mapping exactly.
@@ -463,12 +463,6 @@ def residual_force(n, x_p, y_p, Lx, Ly):
     Fr_y = w_resid * (rho_down - rho_up)
     return Fr_x, Fr_y
 
-
-"""def finishing_array(x_p, L, fin):
-    if fin == 1:
-        return np.where(x_p >= 2 * L - 5e-6, 0, 1)
-    else:
-        return np.ones_like(x_p)"""
 
 def finishing_array(x_p, L, fin):
     """
