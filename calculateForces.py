@@ -278,28 +278,31 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     h = np.maximum(h, h_min) # Prevent numerical blow-up (we will be dividing by a power of h later on)
 
     # Hamaker vdW force magnitude 
-    F_vdW_mag = - A * R / (12.0 * h**2)
+    F_vdW_mag = A * R / (12.0 * h**2)
 
     # Unit vectors; need to project the force onto the vectro in between the two particles
     ex = dx / dist
     ey = dy / dist
 
-    # Force components on particle i due to j
-    Fx_vdW = F_vdW_mag * ex
-    Fy_vdW = F_vdW_mag * ey
-
     # Now we determine the sign of each component of the force; each component need to point towards the other particle
-    behind = (dx < 0) # True iff F_x_i is positive in that pair
-    below = (dy < 0) # True iff F_y_i is positive in that pair
+    behind = (dx < 0).astype(int) # True iff F_x_i is positive in that pair
+    below = (dy < 0).astype(int) # True iff F_y_i is positive in that pair
 
-    # Accumulate forces
+    # Force components on particle i due to j
+    Fx_vdW = F_vdW_mag * ex * (2.* behind - 1.) # (2.* behind - 1) takes a value of -1 or 1. If x[i] < x[j] then the force is positive, else it is negative
+    Fy_vdW = F_vdW_mag * ey * (2.* below - 1.)
+
+    # initialize force vectors forces
     f_vdW_x = np.zeros(len(x))
     f_vdW_y = np.zeros(len(y))
 
-    np.add.at(f_vdW_x, i,  Fx_vdW) # add forces to their arrays vectorized for efficiency; replaced old loop
-    np.add.at(f_vdW_y, i,  Fy_vdW)
-    np.add.at(f_vdW_x, j, -Fx_vdW)
-    np.add.at(f_vdW_y, j, -Fy_vdW)
+    for p in pairs: # p is a list of of two coordinates
+        i = p[0]
+        j = p[1]
+        f_vdW_x.add.at(f_vdW_x, i, Fx_vdW)
+        f_vdW_y.add.at(f_vdW_y, i, Fy_vdW)
+        f_vdW_x.add.at(f_vdW_x, j, Fx_vdW)
+        f_vdW_y.add.at(f_vdW_y, j, Fy_vdW)
 
     # Dipole Calculation
 
