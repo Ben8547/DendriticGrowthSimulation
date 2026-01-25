@@ -255,31 +255,32 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     cutoff = 10. * R
 
     # Find all pairs within cutoff. Returns (i, j) indices of the coords matrix
-    pairs = tree.query_pairs(r=cutoff, output_type='ndarray')
+    pairs = tree.query_pairs(r=cutoff, output_type='ndarray') # returns nx2 matrix where n is the number of particles pairs within the cut off distance. Each row of the matrix contains a pair of indicies within the distance. Note that this returns particle index, i.e. the index of the row in the coords matrix
 
-    i = pairs[:, 0]
-    j = pairs[:, 1]
 
-    dx = x[j] - x[i]
-    dy = y[j] - y[i]
-    dist2 = dx**2 + dy**2
-    dist = np.sqrt(dist2)
+    i = pairs[:, 0] # list of the first coordinate in the pairs
+    j = pairs[:, 1] # list of the second coordinate in the pairs
 
-    mask = dist > 2. * R  # Only compute for particles not in contact
+    dx = x[j] - x[i] # pair x-distances
+    dy = y[j] - y[i] # pair y-distnaces
+    dist2 = dx**2 + dy**2 # list of pair y-distances squaresd
+    dist = np.sqrt(dist2) # list of pair y-distances
 
-    i, j, dx, dy, dist, dist2 = i[mask], j[mask], dx[mask], dy[mask], dist[mask], dist2[mask]
+    mask = dist > 2. * R  # logical index of particles that are more than two partilce radii apart; we only compute vdw force for these to prevent collisions
+
+    i, j, dx, dy, dist, dist2 = i[mask], j[mask], dx[mask], dy[mask], dist[mask], dist2[mask] # these arrays now contain the quanties for particle no less than 2R apart but no more than "cutoff"=10R apart
 
     # van der Waals Calculation
     
-    h = dist - 2.0 * R # Surface-to-surface separation
+    h = dist - 2. * R # Surface-to-surface separation
 
     h_min = 1e-10 * R
     h = np.maximum(h, h_min) # Prevent numerical blow-up (we will be dividing by a power of h later on)
 
-    # Hamaker (Derjaguin) vdW force magnitude 
-    F_vdW_mag = - A * R / (6.0 * h**2)
+    # Hamaker vdW force magnitude 
+    F_vdW_mag = - A * R / (12.0 * h**2)
 
-    # Unit vectors
+    # Unit vectors; need to project the force onto the vectro in between the two particles
     ex = dx / dist
     ey = dy / dist
 
