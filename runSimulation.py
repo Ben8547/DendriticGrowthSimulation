@@ -191,13 +191,9 @@ def run_simulation(params):
 
         while t < t_end: # ideallty make this variable time step at some point, for now this will work
             np.append(times,t) # add the most recent time
-            force_vec = integrable_calcualte_forces(t,initial) # actually accelerations, not forces, divided by eta
+             # actually accelerations, not forces, divided by eta
             time_step = min([default_time_step, 1e-3, t_end - t ]) # find the appropriate time step
-            x = initial[0:n]
-            y = initial[(2*n):(3*n)]
-            vx  = initial[n:(2*n)]
-            vy = initial[(3*n):(4*n)]
-            T = initial[4*n]
+            
 
             
 
@@ -208,13 +204,17 @@ def run_simulation(params):
     
     return t, states
 
-def velocity_verlet_step(initial,n,time_step):
+def velocity_verlet_step(t,initial,n,time_step):
     # Change in positions
-        initial[0:n] += initial[n:(2*n)]*time_step + 0.5 * time_step**2 * force_vec[0:n] # change in x coordinate
-        initial[(2*n):(3*n)] += initial[(3*n):(4*n)]*time_step + 0.5 * time_step**2 * force_vec[(2*n):(3*n)] # change in y coordinate
+        initial_copy = np.copy(initial)
+        force_vec = integrable_calcualte_forces(t,initial)
+        initial_copy[0:n] += initial[n:(2*n)]*time_step + 0.5 * time_step**2 * force_vec[0:n] # change in x coordinate
+        initial_copy[(2*n):(3*n)] += initial[(3*n):(4*n)]*time_step + 0.5 * time_step**2 * force_vec[(2*n):(3*n)] # change in y coordinate
 
         # change in velocities: need to compute acceleration at the next step
         force_vec_next = integrable_calcualte_forces(t,initial) # actually accelerations, not forces, divided by eta technically because of the inclusion of the drag force, this is not exact, but it's hopefully close enough
-        initial[n:(2*n)] += 0.5*(force_vec[n:(2*n)] + force_vec_next[n:(2*n)] ) # change in x velocity
-        initial[(3*n):(4*n)] += 0.5*(force_vec[(3*n):(4*n)] + force_vec_next[(3*n):(4*n)] )  # change in y velocity
-        initial[4*n] = force_vec[4*n]
+        initial_copy[n:(2*n)] += 0.5*(force_vec[n:(2*n)] + force_vec_next[n:(2*n)] ) # change in x velocity
+        initial_copy[(3*n):(4*n)] += 0.5*(force_vec[(3*n):(4*n)] + force_vec_next[(3*n):(4*n)] )  # change in y velocity
+        initial_copy[4*n] = force_vec[4*n] # tempurature evolution
+
+        return initial_copy
