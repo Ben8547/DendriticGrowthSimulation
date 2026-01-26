@@ -298,15 +298,21 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     f_vdW_x = np.zeros(len(x))
     f_vdW_y = np.zeros(len(y))
 
-    for k, p in enumerate(pairs): # p is a list of of two coordinates
+    # Add force to i, subtract (Newton's 3rd) from j
+    np.add.at(f_vdW_x, i,  Fx_vdW)
+    np.add.at(f_vdW_x, j, -Fx_vdW)
+    np.add.at(f_vdW_y, i,  Fy_vdW)
+    np.add.at(f_vdW_y, j, -Fy_vdW)
+    # the below was replaced by the vectorized verion above.
+    '''for k, p in enumerate(pairs): # p is a list of of two coordinates
         i = p[0]
         j = p[1]
         f_vdW_x[i] += Fx_vdW[k] # add the postive version since the variable is defined with respect to i, not j
         f_vdW_x[j] += -Fx_vdW[k] # add the opposite contrabution to the other particle in the pair
         f_vdW_y[i] += Fy_vdW[k]
-        f_vdW_y[j] += -Fy_vdW[k] # add the opposite contrabution to the other particle in the pair
+        f_vdW_y[j] += -Fy_vdW[k] # add the opposite contrabution to the other particle in the pair'''
         
-    return 0,0#f_vdW_x, f_vdW_y
+    return 0., 0.#f_vdW_x, f_vdW_y
     # Dipole Calculation
 
     ''' p_mag = 4. * np.pi * eps0 * eps_r * R**3
