@@ -189,32 +189,91 @@ def run_simulation(params):
         times = np.zeros(1,float)
         time_step = tspan[1] - tspan[0]
 
-        while t < t_end: # ideallty make this variable time step at some point, for now this will work
-             # actually accelerations, not forces, divided by eta
-            if time_step > t_end - t: # do not exceed the total time
-                time_step = t_end - t
-            
-            #Full step
-            initial_FS = velocity_verlet_step(t,initial,n,time_step)
+        # set up the animation figrue and artists
+        writer = FFMpegWriter(fps=30)
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8))
+        plt.tight_layout(pad=3)
 
-            #Two half steps
-            initial_1HS = velocity_verlet_step(t,initial,n,time_step/2.)
-            initial_2HS = velocity_verlet_step(t+time_step/2.,initial_1HS,n,time_step/2.)
+        # ---- Top plot: particle evolution ----
+        ax1.set_xlim([-electrode_width - 5, Lx + electrode_width + 5])
+        ax1.set_ylim([-electrode_height / 2 - 5, electrode_height / 2 + 5])
+        ax1.set_xlabel("x-position")
+        ax1.set_ylabel("y-position")
+        ax1.set_title("Dendritic Growth Simulation")
 
-            err = np.linalg.norm(initial_FS - initial_2HS) # error approximation
+        # Draw electrodes
+        ax1.fill_betweenx(
+            [-electrode_height / 2, electrode_height / 2],
+            -electrode_width,
+            0,
+            color=(1.0, 0.8431, 0.0),
+            alpha=0.3,
+        )
+        ax1.fill_betweenx(
+            [-electrode_height / 2, electrode_height / 2],
+            Lx,
+            Lx + electrode_width,
+            color=(1.0, 0.8431, 0.0),
+            alpha=0.3,
+        )
 
-            if err < error_tol: # accept the result
-                np.append(times,t) # record time history
-                t += time_step # update time 
-                initial = initial_2HS # update phase space coordiantes
+        from viscosity_field import make_globular_indicator
+        ind_func = make_globular_indicator()
 
-                # Update timestep
-                if err < error_tol/2.: # to increase efficiency, if the error is sugnifigantly less than the error tolerance then we can increase the time step
-                    time_step *= 2.
-            else:
-                # Reject step -> reduce time step
-                time_step *= 0.8 * (error_tol / err)**(1/3) # use error formula for the vel_verlet algorithm to choose a new time step to try
-    
+        x = np.linspace(0.,params["L_x"],1000)
+        y = np.linspace(-params["L_y"]/2.,params["L_y"]/2.,1000)
+
+        X, Y = np.meshgrid(x,y)
+
+        Z = ind_func(X,Y)
+        pcm = ax1.pcolormesh(X, Y, Z, cmap="pink", shading="auto", alpha=0.3)
+
+        ax1.imshow(Z)
+        plt.colorbar(pcm, ax=ax1)
+
+        particles, = ax1.plot(initial[0:n], initial[2*n : 3*n], "b.", markersize=2) # this is the artist to be updated
+
+        # deal with the current later - it would go here
+
+
+        # now run the simulation
+        t = tspan[0]
+
+        with writer.saving(fig, "test_simulation_output.mp4", dpi=100):
+            while t < t_end: # variable time step elocity verlet integrator
+                # actually accelerations, not forces, divided by eta
+                if time_step > t_end - t: # do not exceed the total time
+                    time_step = t_end - t
+                
+                #Full step
+                initial_FS = velocity_verlet_step(t,initial,n,time_step)
+
+                #Two half steps
+                initial_1HS = velocity_verlet_step(t,initial,n,time_step/2.)
+                initial_2HS = velocity_verlet_step(t+time_step/2.,initial_1HS,n,time_step/2.)
+
+                err = np.linalg.norm(initial_FS - initial_2HS) # error approximation
+
+                if err < error_tol: # accept the result
+                    np.append(times,t) # record time history
+                    t += time_step # update time 
+                    initial = initial_2HS # update phase space coordiantes
+
+                    # Update timestep
+                    if err < error_tol/2.: # to increase efficiency, if the error is sugnifigantly less than the error tolerance then we can increase the time step
+                        time_step *= 2.
+                    # now that everything is updated, we need to stream this data into an animation file
+                    particles.set_data(initial[0:n], initial[2*n : 3*n])
+                    writer.grab_frame()
+
+                else:
+                    # Reject step -> reduce time step
+                    time_step *= 0.8 * (error_tol / err)**(1/3) # use error formula for the vel_verlet algorithm to choose a new time step to try
+
+            # now we have completed the integration
+        # now the file writer is closed
+    print("Simulation complete.")
+
     return t, states
 
 def velocity_verlet_step(t,initial,n,time_step):

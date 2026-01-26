@@ -18,7 +18,7 @@ rand_dirs_global_x, rand_dirs_global_y = None, None
 
 integrable_calcualte_forces = lambda t,x: calculate_forces(t,x,params) # this function only takes t and x so it can be used by an integrator
 
-def calculate_forces(t, states):
+def calculate_forces(t, states, params):
     """
     Python translation of MATLAB calculateForces.m
     Computes the time derivative dx/dt for all particle states.
