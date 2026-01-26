@@ -187,20 +187,33 @@ def run_simulation(params):
         #t_eval=tspan
         t_end = tspan[-1]
         times = np.zeros(1,float)
-        default_time_step = tspan[1] - tspan[0]
+        time_step = tspan[1] - tspan[0]
 
         while t < t_end: # ideallty make this variable time step at some point, for now this will work
-            np.append(times,t) # add the most recent time
              # actually accelerations, not forces, divided by eta
-            time_step = min([default_time_step, 1e-3, t_end - t ]) # find the appropriate time step
+            if time_step > t_end - t: # do not exceed the total time
+                time_step = t_end - t
             
+            #Full step
+            initial_FS = velocity_verlet_step(t,initial,n,time_step)
 
-            
+            #Two half steps
+            initial_1HS = velocity_verlet_step(t,initial,n,time_step/2.)
+            initial_2HS = velocity_verlet_step(t+time_step/2.,initial_1HS,n,time_step/2.)
 
+            err = np.linalg.norm(initial_FS - initial_2HS) # error approximation
 
-            t += time_step # increase time
+            if err < error_tol: # accept the result
+                np.append(times,t) # record time history
+                t += time_step # update time 
+                initial = initial_2HS # update phase space coordiantes
 
-
+                # Update timestep
+                if err < error_tol/2.: # to increase efficiency, if the error is sugnifigantly less than the error tolerance then we can increase the time step
+                    time_step *= 2.
+            else:
+                # Reject step -> reduce time step
+                time_step *= 0.8 * (error_tol / err)**(1/3) # use error formula for the vel_verlet algorithm to choose a new time step to try
     
     return t, states
 
