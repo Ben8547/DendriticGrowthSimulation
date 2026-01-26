@@ -266,9 +266,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     dist2 = dx**2 + dy**2 # list of pair y-distances squaresd
     dist = np.sqrt(dist2) # list of pair y-distances
 
-    mask = dist > 2. * R  # logical index of particles that are more than two partilce radii apart; we only compute vdw force for these to prevent collisions
-
-    i, j, dx, dy, dist, dist2 = i[mask], j[mask], dx[mask], dy[mask], dist[mask], dist2[mask] # these arrays now contain the quanties for particle no less than 2R apart but no more than "cutoff"=10R apart
+    mask = dist < 2. * R  # logical index of particles that are less than two partilce radii apart; we only compute vdw force for not these to prevent collisions
 
     # van der Waals Calculation
     
@@ -285,24 +283,27 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     ey = dy / dist
 
     # Now we determine the sign of each component of the force; each component need to point towards the other particle
-    behind = (dx < 0).astype(int) # True iff F_x_i is positive in that pair
-    below = (dy < 0).astype(int) # True iff F_y_i is positive in that pair
+    behind = (dx > 0).astype(int) # True iff F_x_i is positive in that pair
+    below = (dy > 0).astype(int) # True iff F_y_i is positive in that pair
 
     # Force components on particle i due to j
     Fx_vdW = F_vdW_mag * ex * (2.* behind - 1.) # (2.* behind - 1) takes a value of -1 or 1. If x[i] < x[j] then the force is positive, else it is negative
     Fy_vdW = F_vdW_mag * ey * (2.* below - 1.)
+    Fx_vdW[mask] = 0.
+    Fy_vdW[mask] = 0.
 
     # initialize force vectors forces
     f_vdW_x = np.zeros(len(x))
     f_vdW_y = np.zeros(len(y))
 
-    for p in pairs: # p is a list of of two coordinates
+    for k, p in enumerate(pairs): # p is a list of of two coordinates
         i = p[0]
         j = p[1]
-        f_vdW_x.add.at(f_vdW_x, i, Fx_vdW)
-        f_vdW_y.add.at(f_vdW_y, i, Fy_vdW)
-        f_vdW_x.add.at(f_vdW_x, j, Fx_vdW)
-        f_vdW_y.add.at(f_vdW_y, j, Fy_vdW)
+        f_vdW_x[i] += Fx_vdW[k] # add the postive version since the variable is defined with respect to i, not j
+        f_vdW_x[j] += -Fx_vdW[k] # add the opposite contrabution to the other particle in the pair
+        f_vdW_y[i] += Fy_vdW[k]
+        f_vdW_y[j] += -Fy_vdW[k] # add the opposite contrabution to the other particle in the pair
+        
 
     # Dipole Calculation
 
@@ -345,16 +346,8 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
 
     fx_total_pairs = fx_dipole + (f_vdW_x)
     fy_total_pairs = fy_dipole + (f_vdW_y)
-
-    fx_net = np.zeros(len(x))
-    fy_net = np.zeros_like(fx_net)
-
-    np.add.at(fx_net, i, fx_total_pairs)
-    np.add.at(fx_net, j, -fx_total_pairs) # negative <==> newton's third law - equal opposite actions
-    np.add.at(fy_net, i, fy_total_pairs)
-    np.add.at(fy_net, j, -fy_total_pairs)
     
-    return fx_net, fy_net
+    return fx_total_pairs, fy_total_pairs
 
 def interfacial_force(n, x_p, y_p, wI, RI, Lx):
     return 0. # I'm setting this force to zero becuase I can't think of physical force that would scale strictly off of distance like this 
