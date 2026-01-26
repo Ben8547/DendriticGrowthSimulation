@@ -55,7 +55,7 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
         for (cx, cy), A, s in zip(centers, amplitudes, sigmas):
             phi += A * exp(-((x - cx)**2 + (y - cy)**2) / (2 * s**2))
 
-        return (phi > threshold).astype(int) # returns the Boolean value as 0 or 1; 1 if in the void
+        return (phi > threshold) # returns the Boolean value
 
     return indicator
 

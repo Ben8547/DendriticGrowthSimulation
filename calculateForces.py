@@ -210,9 +210,8 @@ def drag_force(x, y, x_v, y_v, eta, Cd):
 
     #eta_prime = np.array([ eta if ind_func(x[i],y[i]) == 1 else eta*params['viscosity_multiplier'] for i in range(len(x_v))])
     # the above can be vectorized for increased efficiency
-    eta_prime = np.ones_like(x_v) * eta
-    notVoidMask = (ind_func(x,y) == 0)
-    eta_prime[notVoidMask] *= params['viscosity_multiplier']
+    VoidMask = (ind_func(x,y) == 1)
+    eta_prime = np.where(VoidMask, eta, eta * params['viscosity_multiplier']) # results in the same vector as before, but much quicker
 
     Fd_x = -eta_prime * Cd * x_v
     Fd_y = -eta_prime * Cd * y_v
