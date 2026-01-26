@@ -1,3 +1,7 @@
+"""
+Depreciated - replaced with velocity verlet
+"""
+
 import numpy as np
 
 nmax = 8  # max number of steps in B-S before halving interval
