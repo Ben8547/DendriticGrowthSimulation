@@ -280,16 +280,18 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
 
     # Unit vectors; need to project the force onto the vectro in between the two particles
     ex = dx / dist
-    ey = dy / dist
+    ey = dy / dist # since dy is signed this encode force direction as well
 
     # Now we determine the sign of each component of the force; each component need to point towards the other particle
-    behind = (dx > 0).astype(int) # True iff F_x_i is positive in that pair
-    below = (dy > 0).astype(int) # True iff F_y_i is positive in that pair
+    #behind = (dx > 0).astype(int) # True iff F_x_i is positive in that pair
+    #below = (dy > 0).astype(int) # True iff F_y_i is positive in that pair
 
     # Force components on particle i due to j
-    Fx_vdW = F_vdW_mag * ex * (2.* behind - 1.) # (2.* behind - 1) takes a value of -1 or 1. If x[i] < x[j] then the force is positive, else it is negative
-    Fy_vdW = F_vdW_mag * ey * (2.* below - 1.)
-    Fx_vdW[mask] = 0.
+    #Fx_vdW = F_vdW_mag * ex * (2.* behind - 1.) # (2.* behind - 1) takes a value of -1 or 1. If x[i] < x[j] then the force is positive, else it is negative
+    #Fy_vdW = F_vdW_mag * ey * (2.* below - 1.)
+    Fx_vdW = F_vdW_mag * ex # ex and ey already contained the force direciton. ignore the commented section above as these incorrectly flipped the signs
+    Fy_vdW = F_vdW_mag * ey 
+    Fx_vdW[mask] = 0. # zero the forces when the distances are too small
     Fy_vdW[mask] = 0.
 
     # initialize force vectors forces
@@ -304,7 +306,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
         f_vdW_y[i] += Fy_vdW[k]
         f_vdW_y[j] += -Fy_vdW[k] # add the opposite contrabution to the other particle in the pair
         
-
+    return f_vdW_x, f_vdW_y
     # Dipole Calculation
 
     ''' p_mag = 4. * np.pi * eps0 * eps_r * R**3
