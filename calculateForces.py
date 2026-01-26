@@ -208,7 +208,11 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
 
 def drag_force(x, y, x_v, y_v, eta, Cd):
 
-    eta_prime = np.array([ eta if ind_func(x[i],y[i]) == 1 else eta*params['viscosity_multiplier'] for i in range(len(x_v))])
+    #eta_prime = np.array([ eta if ind_func(x[i],y[i]) == 1 else eta*params['viscosity_multiplier'] for i in range(len(x_v))])
+    # the above can be vectorized for increased efficiency
+    eta_prime = np.ones_like(x_v) * eta
+    notVoidMask = (ind_func(x,y) == 0)
+    eta_prime[notVoidMask] *= params['viscosity_multiplier']
 
     Fd_x = -eta_prime * Cd * x_v
     Fd_y = -eta_prime * Cd * y_v
@@ -217,7 +221,8 @@ def drag_force(x, y, x_v, y_v, eta, Cd):
 
 #from scipy.spatial.distance import pdist, squareform # pdist takes advantage of the symmetry of distance calculations
 
-def compute_dist_matrix(x, y): # compute a matrix of distances - sees use below; depreciated
+# depreciated the distance matrix
+'''def compute_dist_matrix(x, y): # compute a matrix of distances - sees use below; depreciated
     # Reshape to column vectors to enable broadcasting
     # (N, 1) - (1, N) results in an (N, N) matrix of differences
     dx = x[:, np.newaxis] - x[np.newaxis, :]
@@ -226,7 +231,7 @@ def compute_dist_matrix(x, y): # compute a matrix of distances - sees use below;
     # Apply the Euclidean distance formula: sqrt(dx^2 + dy^2)
     dist_matrix = np.sqrt(dx**2 + dy**2)
     
-    return dist_matrix, dx, dy
+    return dist_matrix, dx, dy'''
 
 
 def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"], A=params["Hamaker Constant"], Ex=params["V"]/params["L_x"], Ey=0., eps_r=150.):
@@ -276,7 +281,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     h = np.maximum(h, h_min) # Prevent numerical blow-up (we will be dividing by a power of h later on)
 
     # Hamaker vdW force magnitude 
-    F_vdW_mag = A * R / (12.0 * h**2)
+    F_vdW_mag = A * R / (12.0 * h**2) # Derjaguin approximation - h << R
 
     # Unit vectors; need to project the force onto the vectro in between the two particles
     ex = dx / dist
