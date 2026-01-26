@@ -306,7 +306,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
         f_vdW_y[i] += Fy_vdW[k]
         f_vdW_y[j] += -Fy_vdW[k] # add the opposite contrabution to the other particle in the pair
         
-    return f_vdW_x, f_vdW_y
+    return 0,0#f_vdW_x, f_vdW_y
     # Dipole Calculation
 
     ''' p_mag = 4. * np.pi * eps0 * eps_r * R**3
