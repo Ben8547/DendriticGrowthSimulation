@@ -57,7 +57,7 @@ def run_simulation(params):
     tindex = 1
     V = params["V"]
 
-    if not params["Velocity_Verlet"]: #use scipy to integrate
+    if not params["Velocity_Verlet"]: #use scipy to integrate; this is now depreciated
         sol = solve_ivp(
             fun=integrable_calcualte_forces,
             t_span=(tspan[0], tspan[-1]),
@@ -177,7 +177,44 @@ def run_simulation(params):
         print("Simulation complete. GIF saved.")
 
     else: #Use Velocity-Verlet to integrate
-        # we write the velocity verlet function         
+        # we write the velocity verlet function here and include the ability to stream the simualtion directly into a file. Thus we don't need to wait at the end for the animation to compile
+        error_tol = params['Verlet_error_per_unit_time']    
+        from matplotlib.animation import FFMpegWriter # for streaming the frames into  a file
+        # recall :
+        #fun=integrable_calcualte_forces
+        #t_span=(tspan[0], tspan[-1])
+        #y0=initial
+        #t_eval=tspan
+        t_end = tspan[-1]
+        times = np.zeros(1,float)
+        default_time_step = tspan[1] - tspan[0]
+
+        while t < t_end: # ideallty make this variable time step at some point, for now this will work
+            np.append(times,t) # add the most recent time
+            force_vec = integrable_calcualte_forces(t,initial) # actually accelerations, not forces, divided by eta
+            time_step = min([default_time_step, 1e-3, t_end - t ]) # find the appropriate time step
+            x = initial[0:n]
+            y = initial[(2*n):(3*n)]
+            vx  = initial[n:(2*n)]
+            vy = initial[(3*n):(4*n)]
+            T = initial[4*n]
+
+            
+
+
+            t += time_step # increase time
+
 
     
     return t, states
+
+def velocity_verlet_step(initial,n,time_step):
+    # Change in positions
+        initial[0:n] += initial[n:(2*n)]*time_step + 0.5 * time_step**2 * force_vec[0:n] # change in x coordinate
+        initial[(2*n):(3*n)] += initial[(3*n):(4*n)]*time_step + 0.5 * time_step**2 * force_vec[(2*n):(3*n)] # change in y coordinate
+
+        # change in velocities: need to compute acceleration at the next step
+        force_vec_next = integrable_calcualte_forces(t,initial) # actually accelerations, not forces, divided by eta technically because of the inclusion of the drag force, this is not exact, but it's hopefully close enough
+        initial[n:(2*n)] += 0.5*(force_vec[n:(2*n)] + force_vec_next[n:(2*n)] ) # change in x velocity
+        initial[(3*n):(4*n)] += 0.5*(force_vec[(3*n):(4*n)] + force_vec_next[(3*n):(4*n)] )  # change in y velocity
+        initial[4*n] = force_vec[4*n]
