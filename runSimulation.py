@@ -239,10 +239,11 @@ def run_simulation(params):
 
         # now run the simulation
         t = tspan[0]
+        current_time_indicator = 1 # the next time at which to capture the animation frame; index of the tspan array
 
         with writer.saving(fig, "test_simulation_output.mp4", dpi=100):
             while t < t_end: # variable time step elocity verlet integrator
-                print(f"{t}, {time_step}")
+                print(f"{t}, {time_step}") # debug
                 # actually accelerations, not forces, divided by eta
                 if time_step > t_end - t: # do not exceed the total time
                     time_step = t_end - t
@@ -256,21 +257,23 @@ def run_simulation(params):
 
                 err = np.linalg.norm(initial_FS - initial_2HS) # error approximation
 
-                if err < error_tol: # accept the result
+                if err < error_tol * time_step: # accept the result; error per unit time
                     times = np.append(times,t) # record time history
                     t += time_step # update time 
                     initial = initial_2HS # update phase space coordiantes
 
                     # Update timestep
-                    if err < error_tol/2.: # to increase efficiency, if the error is sugnifigantly less than the error tolerance then we can increase the time step
+                    if err < error_tol/4.: # to increase efficiency, if the error is sugnifigantly less than the error tolerance then we can increase the time step
                         time_step *= 2.
                     # now that everything is updated, we need to stream this data into an animation file
-                    particles.set_data(initial[0:n], initial[2*n : 3*n]) # update the artist - change particle positions in the image
-                    writer.grab_frame() # stream the new image to the file
+                    if t >= tspan[current_time_indicator]:# restrict the frames to grab - takes too long and files are too big if we capture every frame
+                        current_time_indicator += 1 # increase the indicator - only record once in each window of the tspan array
+                        particles.set_data(initial[0:n], initial[2*n : 3*n]) # update the artist - change particle positions in the image
+                        writer.grab_frame() # stream the new image to the file
 
                 else:
                     # Reject step -> reduce time step
-                    time_step *= 0.8 * (error_tol / err)**(1/3) # use error formula for the vel_verlet algorithm to choose a new time step to try
+                    time_step *= 0.5 #0.8 * (error_tol / err)**(1/3) # use error formula for the vel_verlet algorithm to choose a new time step to try
 
             # now we have completed the integration
         # now the file writer is closed

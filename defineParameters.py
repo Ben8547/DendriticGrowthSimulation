@@ -19,7 +19,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
 
     "Velocity_Verlet" : True, # if True, uses custom bulirsch-stoer algorithm, if False it uses scipy.integrate.solve_ivp()
-    'Verlet_error_per_unit_time': 1e-3,
+    'Verlet_error_per_unit_time': 1,
     "min_step_size": 1e-16,
     "scipy_tag" : "RK45", # should be a string for the method argument of scipy.integrate.solve_ivp()
     "rtol" : 1e-2, # relative error param for scipy integration
