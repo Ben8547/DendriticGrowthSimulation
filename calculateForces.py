@@ -13,7 +13,6 @@ r = params["elec_transfer_radius"]
 # Global simulation state
 tindex = 0
 V = params["V"]
-I_saved, t_saved, I_last = [], [], 0
 rand_dirs_global_x, rand_dirs_global_y = None, None
 
 integrable_calcualte_forces = lambda t,x: calculate_forces(t,x,params) # this function only takes t and x so it can be used by an integrator
@@ -24,8 +23,8 @@ def calculate_forces(t, states, params):
     Computes the time derivative dx/dt for all particle states.
     """
 
-    global tindex, V, I_saved, t_saved, I_last, Volt
-    global rand_dirs_global_x, rand_dirs_global_y
+    global tindex, V, Volt
+    global rand_dirs_global_x, rand_dirs_global_y # these being global variables is a remnant of the matlab code. I don't think they are needed, but I don't want to mess anything up my removing them.
 
     if not params['is_Voltage_constant']:
         Volt = params["V_func"](t)
@@ -57,6 +56,7 @@ def calculate_forces(t, states, params):
     # ------------------------
     # Compute current at intervals
     # ------------------------
+    '''
     if tindex < len(params["tspan"]) and t > params["tspan"][tindex]:
         rand_dirs_global_x = 2 * np.random.randint(0, 2, n) - 1
         rand_dirs_global_y = 2 * np.random.randint(0, 2, n) - 1
@@ -70,15 +70,16 @@ def calculate_forces(t, states, params):
                 )
 
         tindex += 1
-        '''if tindex > 1000 and Volt != 0 and params["is_Voltage_constant"]: # after 1000 interations set voltage to 0; only do if the voltage is constant
+        """if tindex > 1000 and Volt != 0 and params["is_Voltage_constant"]: # after 1000 interations set voltage to 0; only do if the voltage is constant
             Volt = 0
-            print("Voltage set to zero after 1000 iterations")''' # for relaxation models
+            print("Voltage set to zero after 1000 iterations")""" # for relaxation models
 
         print(f"Time index {tindex} / {len(params['tspan'])}")
         print(f"Computed I at t = {tindex}, I = {I_last:.3e}")
 
         I_saved.append(I_last)
         t_saved.append(t)
+        ''' # this will be transferred to the runSimulation.py file since nothing in the forces uses it anyway
 
     # ------------------------
     # Forces
