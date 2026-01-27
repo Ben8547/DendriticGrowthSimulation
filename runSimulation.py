@@ -176,7 +176,7 @@ def run_simulation(params):
         plt.close(fig)
         print("Simulation complete. GIF saved.")
 
-    else: #Use Velocity-Verlet to integrate
+    else: #Use Velocity-Verlet to integrate; Update: I'm changing this to RKF45 since the Verlet method had too small time steps. I think this is because the verlet integrator requires the use of the next force vector, but we can only approximate this in the current scheme because the force depends upon the velocities (drag force). I will not be changing the variable labels, so keep that in mind if something mentions the verlet alorithm.
         # we write the velocity verlet function here and include the ability to stream the simualtion directly into a file. Thus we don't need to wait at the end for the animation to compile
         error_tol = params['Verlet_error_per_unit_time']  
         min_step = params["min_step_size"]  
@@ -248,23 +248,23 @@ def run_simulation(params):
                 if time_step > t_end - t: # do not exceed the total time
                     time_step = t_end - t
                 
-                #Full step
-                initial_FS = velocity_verlet_step(t,initial,n,time_step)
+                '''#Full step
+                initial_FS = (t,initial,n,time_step)
 
                 #Two half steps
                 initial_1HS = velocity_verlet_step(t,initial,n,time_step/2.)
                 initial_2HS = velocity_verlet_step(t+time_step/2.,initial_1HS,n,time_step/2.)
+                err = np.linalg.norm(initial_FS - initial_2HS) # error approximation'''#step variable verlet
 
-                err = np.linalg.norm(initial_FS - initial_2HS) # error approximation
+                proposed, step_error, ideal_step = RKF45_step(t,initial,time_step, error_tol)
 
-                if err < error_tol * time_step: # accept the result; error per unit time
+                if step_error < error_tol * time_step: # accept the result; error per unit time
                     times = np.append(times,t) # record time history
                     t += time_step # update time 
-                    initial = initial_2HS # update phase space coordiantes
+                    initial = proposed # update phase space coordiantes
 
                     # Update timestep
-                    if err < error_tol/4.: # to increase efficiency, if the error is sugnifigantly less than the error tolerance then we can increase the time step
-                        time_step *= 2.
+                    time_step = ideal_step
                     # now that everything is updated, we need to stream this data into an animation file
                     if t >= tspan[current_time_indicator]:# restrict the frames to grab - takes too long and files are too big if we capture every frame
                         current_time_indicator += 1 # increase the indicator - only record once in each window of the tspan array
@@ -273,13 +273,30 @@ def run_simulation(params):
 
                 else:
                     # Reject step -> reduce time step
-                    time_step *= 0.5 #0.8 * (error_tol / err)**(1/3) # use error formula for the vel_verlet algorithm to choose a new time step to try
+                    time_step = ideal_step # don't change t and try again with the new time step
 
             # now we have completed the integration
         # now the file writer is closed
     print("Simulation complete.")
 
     return t, states
+
+def RKF45_step(t,initial,dt,err_tol):
+    # Change in positions
+        initial_copy = np.copy(initial) # as to not mutate the original array
+        k1 = dt*integrable_calcualte_forces(t,initial_copy)
+        k2 = dt*integrable_calcualte_forces(t+0.25*dt, initial_copy + 0.25*k1)
+        k3 = dt*integrable_calcualte_forces(t+(3./8.)*dt, initial_copy+(3./32.)*k1 + (9./32.)*k2)
+        k4 = dt*integrable_calcualte_forces(t+(12./13.)*dt, initial_copy+(1932./2197.)*k1 + (7200./2197.)*k2 + (7296./2197.)*k3)
+        k5 = dt*integrable_calcualte_forces(t+dt, initial_copy + (439./216.) * k1 - 8.*k2 + (5380./513.)*k3 - (845./4104.)*k4)
+        k6 = dt*integrable_calcualte_forces(t + 0.5*dt, initial_copy - (8./27.)*k1 + 2.*k2 - (3544./2565.)*k3 + (1859./4104.)*k4 - (11./40.)*k5 )
+
+        rk4 = initial_copy + (25./216.)*k1 + (1408./2565.)*k3 + (2197./4101.)*k4 - 0.2*k5 # RK4 approx
+        rk5 =  initial_copy + (16./135.)*k1 + (6656./12825.)*k3 + (28561./56430.)*k4 - (9./50.)*k5 + (2./55.)*k6 # rk5 approx
+        approx_err = abs(rk5-rk4)
+        ideal_step_size = dt*(err_tol*dt/approx_err/2)**(0.25)
+
+        return rk5, approx_err, ideal_step_size
 
 def velocity_verlet_step(t,initial,n,time_step):
     # Change in positions
@@ -289,6 +306,7 @@ def velocity_verlet_step(t,initial,n,time_step):
         initial_copy[(2*n):(3*n)] += initial[(3*n):(4*n)]*time_step + 0.5 * time_step**2 * force_vec[(3*n):(4*n)] # change in y coordinate
 
         # change in velocities: need to compute acceleration at the next step
+        '''The below is not accurate because the force depends on velocity'''
         force_vec_next = integrable_calcualte_forces(t,initial_copy) # actually accelerations, not forces, divided by eta technically because of the inclusion of the drag force, this is not exact, but it's hopefully close enough
         initial_copy[n:(2*n)] += 0.5*(force_vec[n:(2*n)] + force_vec_next[n:(2*n)] )*time_step # change in x velocity
         initial_copy[(3*n):(4*n)] += 0.5*(force_vec[(3*n):(4*n)] + force_vec_next[(3*n):(4*n)] )*time_step  # change in y velocity
