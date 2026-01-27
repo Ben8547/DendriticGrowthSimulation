@@ -13,10 +13,10 @@ def run_simulation(params):
     Runs the full dendritic growth simulation with visualization and GIF output.
     """
 
-    # Initialize globals (same as MATLAB)
+    '''# Initialize globals (same as MATLAB)
     from calculateForces import I_saved, t_saved
     I_saved.clear()
-    t_saved.clear()
+    t_saved.clear()'''
 
     np.random.seed(1)
 
@@ -178,7 +178,8 @@ def run_simulation(params):
 
     else: #Use Velocity-Verlet to integrate
         # we write the velocity verlet function here and include the ability to stream the simualtion directly into a file. Thus we don't need to wait at the end for the animation to compile
-        error_tol = params['Verlet_error_per_unit_time']    
+        error_tol = params['Verlet_error_per_unit_time']  
+        min_step = params["min_step_size"]  
         from matplotlib.animation import FFMpegWriter # for streaming the frames into  a file
         # recall :
         #fun=integrable_calcualte_forces
@@ -241,6 +242,7 @@ def run_simulation(params):
 
         with writer.saving(fig, "test_simulation_output.mp4", dpi=100):
             while t < t_end: # variable time step elocity verlet integrator
+                print(f"{t}, {time_step}")
                 # actually accelerations, not forces, divided by eta
                 if time_step > t_end - t: # do not exceed the total time
                     time_step = t_end - t
@@ -255,7 +257,7 @@ def run_simulation(params):
                 err = np.linalg.norm(initial_FS - initial_2HS) # error approximation
 
                 if err < error_tol: # accept the result
-                    np.append(times,t) # record time history
+                    times = np.append(times,t) # record time history
                     t += time_step # update time 
                     initial = initial_2HS # update phase space coordiantes
 
@@ -263,8 +265,8 @@ def run_simulation(params):
                     if err < error_tol/2.: # to increase efficiency, if the error is sugnifigantly less than the error tolerance then we can increase the time step
                         time_step *= 2.
                     # now that everything is updated, we need to stream this data into an animation file
-                    particles.set_data(initial[0:n], initial[2*n : 3*n])
-                    writer.grab_frame()
+                    particles.set_data(initial[0:n], initial[2*n : 3*n]) # update the artist - change particle positions in the image
+                    writer.grab_frame() # stream the new image to the file
 
                 else:
                     # Reject step -> reduce time step
@@ -280,13 +282,13 @@ def velocity_verlet_step(t,initial,n,time_step):
     # Change in positions
         initial_copy = np.copy(initial)
         force_vec = integrable_calcualte_forces(t,initial)
-        initial_copy[0:n] += initial[n:(2*n)]*time_step + 0.5 * time_step**2 * force_vec[0:n] # change in x coordinate
-        initial_copy[(2*n):(3*n)] += initial[(3*n):(4*n)]*time_step + 0.5 * time_step**2 * force_vec[(2*n):(3*n)] # change in y coordinate
+        initial_copy[0:n] += initial[n:(2*n)]*time_step + 0.5 * time_step**2 * force_vec[n:(2*n)] # change in x coordinate
+        initial_copy[(2*n):(3*n)] += initial[(3*n):(4*n)]*time_step + 0.5 * time_step**2 * force_vec[(3*n):(4*n)] # change in y coordinate
 
         # change in velocities: need to compute acceleration at the next step
-        force_vec_next = integrable_calcualte_forces(t,initial) # actually accelerations, not forces, divided by eta technically because of the inclusion of the drag force, this is not exact, but it's hopefully close enough
-        initial_copy[n:(2*n)] += 0.5*(force_vec[n:(2*n)] + force_vec_next[n:(2*n)] ) # change in x velocity
-        initial_copy[(3*n):(4*n)] += 0.5*(force_vec[(3*n):(4*n)] + force_vec_next[(3*n):(4*n)] )  # change in y velocity
-        initial_copy[4*n] = force_vec[4*n] # tempurature evolution
+        force_vec_next = integrable_calcualte_forces(t,initial_copy) # actually accelerations, not forces, divided by eta technically because of the inclusion of the drag force, this is not exact, but it's hopefully close enough
+        initial_copy[n:(2*n)] += 0.5*(force_vec[n:(2*n)] + force_vec_next[n:(2*n)] )*time_step # change in x velocity
+        initial_copy[(3*n):(4*n)] += 0.5*(force_vec[(3*n):(4*n)] + force_vec_next[(3*n):(4*n)] )*time_step  # change in y velocity
+        initial_copy[4*n] += time_step * force_vec[4*n] # tempurature evolution
 
         return initial_copy
