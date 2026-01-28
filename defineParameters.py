@@ -18,12 +18,11 @@ params = { # create a dictionary to hold parameters
     # Integration method
     #--------------------------------
 
-    "Velocity_Verlet" : "False", # if True, uses custom bulirsch-stoer algorithm, if False it uses scipy.integrate.solve_ivp()
+    "Velocity_Verlet" : "True", # if True, uses custom verlet algorithm, if False it uses scipy.integrate.solve_ivp()
     'Verlet_error_per_unit_time': 1e-2,
-    "min_step_size": 1e-16,
     "scipy_tag" : "RK45", # should be a string for the method argument of scipy.integrate.solve_ivp()
-    "rtol" : 1e-2, # relative error param for scipy integration
-    "atol" : 1e-2, # absolute error param for scipy integration
+    "rtol" : 1e-3, # relative error param for scipy integration
+    "atol" : 1e-3, # absolute error param for scipy integration
 
     #--------------------------------
     # Basic Simulation Parameters
@@ -103,7 +102,7 @@ params = { # create a dictionary to hold parameters
 params["elec_transfer_radius"] = params["L_x"]/150. # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
 
 # simulation parameters
-params['dt'] = params["simulation_length"]/500.  # Time step for simulation; originally 2000
+params['dt'] = params["simulation_length"]/100.  # Time step for simulation; originally 2000
 params["tspan"] = np.arange(0, params["simulation_length"], params["dt"]) # Time span for simulation output
 
 # material and electrode dimensions

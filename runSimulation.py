@@ -178,20 +178,19 @@ def run_simulation(params):
 
     else: #Use Velocity-Verlet to integrate; Update: I'm changing this to RKF45 since the Verlet method had too small time steps. I think this is because the verlet integrator requires the use of the next force vector, but we can only approximate this in the current scheme because the force depends upon the velocities (drag force). I will not be changing the variable labels, so keep that in mind if something mentions the verlet alorithm.
         # we write the velocity verlet function here and include the ability to stream the simualtion directly into a file. Thus we don't need to wait at the end for the animation to compile
-        error_tol = params['Verlet_error_per_unit_time']  
-        min_step = params["min_step_size"]  
+        #error_tol = params['Verlet_error_per_unit_time']  
         from matplotlib.animation import FFMpegWriter # for streaming the frames into  a file
         # recall :
         #fun=integrable_calcualte_forces
         #t_span=(tspan[0], tspan[-1])
         #y0=initial
         #t_eval=tspan
-        t_end = tspan[-1]
-        times = np.zeros(1,float)
-        time_step = tspan[1] - tspan[0]
+        #t_end = tspan[-1]
+        #times = np.zeros(1,float)
+        #time_step = tspan[1] - tspan[0]
 
         # set up the animation figrue and artists
-        writer = FFMpegWriter(fps=30)
+        writer = FFMpegWriter(fps=10)
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8))
         plt.tight_layout(pad=3)
 
@@ -234,10 +233,20 @@ def run_simulation(params):
 
         particles, = ax1.plot(initial[0:n], initial[2*n : 3*n], "b.", markersize=2) # this is the artist to be updated
 
-        # deal with the current later - it would go here
+        # graph the current
+
+        current_histroy = [0.] # initialize the current history
+
+        current_graph, = ax2.plot([0.], current_histroy)
+        ax2.set_ylim(0.,2e-5)
+        ax2.set_xlim(0.,tspan[-1])
+        ax2.set_ylabel("Current I")
+        ax2.set_xlabel("Time")
+        ax2.grid(True)
 
 
         # now run the simulation
+        from calculateCurrent import calculate_current
         t = tspan[0]
         current_time_indicator = 1 # the next time at which to capture the animation frame; index of the tspan array
         from scipy.integrate import RK45
@@ -281,19 +290,33 @@ def run_simulation(params):
             t0=tspan[0],
             y0=initial,
             t_bound=tspan[-1],
-            rtol=rtol,
-            atol=atol,
+            rtol=params['rtol'],
+            atol=params['atol'],
             )
             current_time_indicator = 1
+            times = [0.]
             while solver.status == "running": # run the solver
                 solver.step() # one step
                 t = solver.t # current time
                 y = solver.y # current state vector
-                print(f"{t}")
+                print(f"time: {t}") # debug tool
                 # now that everything is updated, we need to stream this data into an animation file
                 if t >= tspan[current_time_indicator]: 
                     current_time_indicator += 1
                     particles.set_data(y[0:n], y[2*n:3*n])
+                    # get the electric current data
+                    if not params['is_Voltage_constant']: # set the voltage
+                        Volt = params["V_func"](t)
+                    else:
+                        Volt = V
+                    times.append(t) # add to time history
+                    if Volt == 0.: current_histroy.append(0.) # this should save a lot of time
+                    else:
+                        current_histroy.append(calculate_current(
+                        y[0:n], y[2*n:3*n], params["L_x"],params["L_y"], Volt,
+                        params["lambda"], params["Rt"], y[-1], params['num_e']#params["steps"], params["num_e"]
+                        ))
+                    current_graph.set_data(times,current_histroy)
                     writer.grab_frame()
             states = solver.y
             t = solver.t
@@ -303,12 +326,6 @@ def run_simulation(params):
     print("Simulation complete.")
 
     return t, states
-
-from defineParameters import params
-
-atol = params['rtol']
-rtol = params["atol"]
-
 
 # these functions below are no longer in use
 def RKF45_step(t,initial,dt,err_tol):
@@ -325,7 +342,7 @@ def RKF45_step(t,initial,dt,err_tol):
         rk4 = initial_copy + (25./216.)*k1 + (1408./2565.)*k3 + (2197./4104.)*k4 - 0.2*k5 # RK4 approx
         rk5 =  initial_copy + (16./135.)*k1 + (6656./12825.)*k3 + (28561./56430.)*k4 - (9./50.)*k5 + (2./55.)*k6 # rk5 approx
 
-        scale = atol + rtol * np.maximum(np.abs(rk4), np.abs(rk5))
+        scale = 1.#atol + rtol * np.maximum(np.abs(rk4), np.abs(rk5))
         approx_err = np.linalg.norm((rk5 - rk4) / scale) / np.sqrt(len(initial)) # should help temper the size of the error 
         ideal_step_size = dt*(err_tol*dt/approx_err/2)**(0.25) * 0.9 # 0.9 is a safetey factor; this sets the ideal time step for the next iteration
 

@@ -1,6 +1,5 @@
 import numpy as np
 from defineParameters import params
-from calculateCurrent import calculate_current
 #from time import sleep # for debugging
 from viscosity_field import make_globular_indicator
 from scipy.spatial import cKDTree # makes spatial searches much faster
