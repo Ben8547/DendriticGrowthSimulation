@@ -157,7 +157,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
         # Apply scaling only to particles within [0,Lx]
         # only apply force to particle inside of a void
         out_void = ~is_void # logcal index: particle is a void region <=> insulated from the electric field
-        Fa_x[inside & (out_void)] = alpha[inside & (out_void)] * Volt / ((0.5) * Lx) # assign force as normal if not in a void region and inside the domain
+        Fa_x[inside & (out_void)] = alpha[inside & (out_void)] * Volt / ((0.5) * Lx) # assign force as normal if not in a void region and inside the domain noteably, if Volt is zero, then so is the force
 
         '''
         This section deals in adding back a force to those particles inside of the void if there 
