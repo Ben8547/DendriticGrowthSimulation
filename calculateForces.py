@@ -249,8 +249,6 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     # In the Hamacker model, the van der Waals force between two spheres of radius R1 and R2 with separation r is (A)(R1)(R2) / 6(R1+R2)r^6
     # both particles feels the force reciprically via Newton's third law
 
-    eps0 = params["eps_0"]
-
     x = coords[:,0]
     y = coords[:,1]
 
@@ -265,12 +263,12 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     i = pairs[:, 0] # list of the first coordinate in the pairs
     j = pairs[:, 1] # list of the second coordinate in the pairs
 
-    dx = x[j] - x[i] # pair x-distances
-    dy = y[j] - y[i] # pair y-distnaces
+    dx = x[j] - x[i] # pair x-distances; dx points from i to j
+    dy = y[j] - y[i] # pair y-distnaces; points from i to j
     dist2 = dx**2 + dy**2 # list of pair y-distances squaresd
     dist = np.sqrt(dist2) # list of pair y-distances
 
-    mask = dist < 2. * R  # logical index of particles that are less than two partilce radii apart; we only compute vdw force for not these to prevent collisions
+    mask = (dist < 2.00001 * R)  # logical index of particles that are less than two partilce radii apart; we only compute vdw force for *not* these to prevent collisions
 
     # van der Waals Calculation
     
@@ -284,16 +282,12 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
 
     # Unit vectors; need to project the force onto the vectro in between the two particles
     ex = dx / dist
-    ey = dy / dist # since dy is signed this encode force direction as well
+    ey = dy / dist # since dy is signed this encode force direction as well; points from i to j
 
-    # Now we determine the sign of each component of the force; each component need to point towards the other particle
-    #behind = (dx > 0).astype(int) # True iff F_x_i is positive in that pair
-    #below = (dy > 0).astype(int) # True iff F_y_i is positive in that pair
-
-    # Force components on particle i due to j
-    #Fx_vdW = F_vdW_mag * ex * (2.* behind - 1.) # (2.* behind - 1) takes a value of -1 or 1. If x[i] < x[j] then the force is positive, else it is negative
-    #Fy_vdW = F_vdW_mag * ey * (2.* below - 1.)
-    Fx_vdW = F_vdW_mag * ex # ex and ey already contained the force direciton. ignore the commented section above as these incorrectly flipped the signs
+    # Force components on particle i due to j; i.e. the force should point from particle i to particle j
+    # if particle i is behind j, ex is positive, we want to x force to point in the positive direction since this will pull i towards j
+    # if j is behind i then ex is negative and so is the force. This is again desired as it pulls particle x back, towards j.
+    Fx_vdW = F_vdW_mag * ex # ex and ey already contain the force direciton.
     Fy_vdW = F_vdW_mag * ey 
     Fx_vdW[mask] = 0. # zero the forces when the distances are too small
     Fy_vdW[mask] = 0.
@@ -304,7 +298,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
 
     # Add force to i, subtract (Newton's 3rd) from j
     np.add.at(f_vdW_x, i,  Fx_vdW)
-    np.add.at(f_vdW_x, j, -Fx_vdW)
+    np.add.at(f_vdW_x, j, -Fx_vdW) # the force on j is opposite the force on i
     np.add.at(f_vdW_y, i,  Fy_vdW)
     np.add.at(f_vdW_y, j, -Fy_vdW)
     # the below was replaced by the vectorized verion above.
@@ -316,10 +310,11 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
         f_vdW_y[i] += Fy_vdW[k]
         f_vdW_y[j] += -Fy_vdW[k] # add the opposite contrabution to the other particle in the pair'''
         
-    return 0., 0.#f_vdW_x, f_vdW_y
-    # Dipole Calculation
+    return f_vdW_x, f_vdW_y
+    # Dipole Calculation - reomved for now
 
-    ''' p_mag = 4. * np.pi * eps0 * eps_r * R**3
+    ''' eps0 = params["eps_0"]
+    p_mag = 4. * np.pi * eps0 * eps_r * R**3
     px = p_mag * Ex
     py = p_mag * Ey
 
@@ -424,7 +419,7 @@ def temperature_fluctuations(n, eta, T_coeff, T, rand_x, rand_y):
     noise_scale = np.sqrt(eta * T_coeff * T)
     Ft_x = rand_x * noise_scale
     Ft_y = rand_y * noise_scale
-    return Ft_x, Ft_y
+    return Ft_x/100., Ft_y/100. # scaled so that these forces are not dominant - they should be small relative to the other forces
 
 # # ------------------------
 # # TODO: Residual Force

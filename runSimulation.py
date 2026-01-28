@@ -251,7 +251,7 @@ def run_simulation(params):
         current_time_indicator = 1 # the next time at which to capture the animation frame; index of the tspan array
         from scipy.integrate import RK45
 
-        with writer.saving(fig, "test_simulation_output.mp4", dpi=100):
+        with writer.saving(fig, "test_simulation_output.mp4", dpi=100): # this enables streaming the simulation data to a file concurrent with the simualtion - enables an approximate 5x speed up
             """while t < t_end: # variable time step elocity verlet integrator
                 print(f"{t}, {time_step}") # debug
                 # actually accelerations, not forces, divided by eta
@@ -299,7 +299,6 @@ def run_simulation(params):
                 solver.step() # one step
                 t = solver.t # current time
                 y = solver.y # current state vector
-                print(f"time: {t}") # debug tool
                 # now that everything is updated, we need to stream this data into an animation file
                 if t >= tspan[current_time_indicator]: 
                     current_time_indicator += 1
@@ -317,7 +316,8 @@ def run_simulation(params):
                         params["lambda"], params["Rt"], y[-1], params['num_e']#params["steps"], params["num_e"]
                         ))
                     current_graph.set_data(times,current_histroy)
-                    writer.grab_frame()
+                    writer.grab_frame() # write the most recent frame to the file
+                print(f"time: {t}, current {current_histroy[-1]}") # debug tool
             states = solver.y
             t = solver.t
 
