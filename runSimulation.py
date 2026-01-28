@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
-from scipy.integrate import solve_ivp
 #import imageio
 
 from calculateForces import integrable_calcualte_forces
@@ -58,6 +57,7 @@ def run_simulation(params):
     V = params["V"]
 
     if not params["Velocity_Verlet"]: #use scipy to integrate; this is now depreciated
+        from scipy.integrate import solve_ivp
         sol = solve_ivp(
             fun=integrable_calcualte_forces,
             t_span=(tspan[0], tspan[-1]),
@@ -240,9 +240,10 @@ def run_simulation(params):
         # now run the simulation
         t = tspan[0]
         current_time_indicator = 1 # the next time at which to capture the animation frame; index of the tspan array
+        from scipy.integrate import RK45
 
         with writer.saving(fig, "test_simulation_output.mp4", dpi=100):
-            while t < t_end: # variable time step elocity verlet integrator
+            """while t < t_end: # variable time step elocity verlet integrator
                 print(f"{t}, {time_step}") # debug
                 # actually accelerations, not forces, divided by eta
                 if time_step > t_end - t: # do not exceed the total time
@@ -264,7 +265,7 @@ def run_simulation(params):
                     initial = proposed # update phase space coordiantes
 
                     # Update timestep
-                    time_step = ideal_step
+                    time_step = 2.*time_step if step_error < error_tol * time_step/4. else ideal_step # increase the step a lot if the error is much smaller than the ideal error
                     # now that everything is updated, we need to stream this data into an animation file
                     if t >= tspan[current_time_indicator]:# restrict the frames to grab - takes too long and files are too big if we capture every frame
                         current_time_indicator += 1 # increase the indicator - only record once in each window of the tspan array
@@ -273,7 +274,29 @@ def run_simulation(params):
 
                 else:
                     # Reject step -> reduce time step
-                    time_step = ideal_step # don't change t and try again with the new time step
+                    time_step = max(0.5 * time_step, ideal_step)""" # manual RKF45 integrator - too slow
+            # use scipy integrator instead
+            solver = RK45(
+            fun=integrable_calcualte_forces,
+            t0=tspan[0],
+            y0=initial,
+            t_bound=tspan[-1],
+            rtol=rtol,
+            atol=atol,
+            )
+            current_time_indicator = 1
+            while solver.status == "running": # run the solver
+                solver.step() # one step
+                t = solver.t # current time
+                y = solver.y # current state vector
+                print(f"{t}")
+                # now that everything is updated, we need to stream this data into an animation file
+                if t >= tspan[current_time_indicator]: 
+                    current_time_indicator += 1
+                    particles.set_data(y[0:n], y[2*n:3*n])
+                    writer.grab_frame()
+            states = solver.y
+            t = solver.t
 
             # now we have completed the integration
         # now the file writer is closed
@@ -281,7 +304,15 @@ def run_simulation(params):
 
     return t, states
 
+from defineParameters import params
+
+atol = params['rtol']
+rtol = params["atol"]
+
+
+# these functions below are no longer in use
 def RKF45_step(t,initial,dt,err_tol):
+
     # Change in positions
         initial_copy = np.copy(initial) # as to not mutate the original array
         k1 = dt*integrable_calcualte_forces(t,initial_copy)
@@ -291,10 +322,12 @@ def RKF45_step(t,initial,dt,err_tol):
         k5 = dt*integrable_calcualte_forces(t+dt, initial_copy + (439./216.) * k1 - 8.*k2 + (5380./513.)*k3 - (845./4104.)*k4)
         k6 = dt*integrable_calcualte_forces(t + 0.5*dt, initial_copy - (8./27.)*k1 + 2.*k2 - (3544./2565.)*k3 + (1859./4104.)*k4 - (11./40.)*k5 )
 
-        rk4 = initial_copy + (25./216.)*k1 + (1408./2565.)*k3 + (2197./4101.)*k4 - 0.2*k5 # RK4 approx
+        rk4 = initial_copy + (25./216.)*k1 + (1408./2565.)*k3 + (2197./4104.)*k4 - 0.2*k5 # RK4 approx
         rk5 =  initial_copy + (16./135.)*k1 + (6656./12825.)*k3 + (28561./56430.)*k4 - (9./50.)*k5 + (2./55.)*k6 # rk5 approx
-        approx_err = abs(rk5-rk4)
-        ideal_step_size = dt*(err_tol*dt/approx_err/2)**(0.25)
+
+        scale = atol + rtol * np.maximum(np.abs(rk4), np.abs(rk5))
+        approx_err = np.linalg.norm((rk5 - rk4) / scale) / np.sqrt(len(initial)) # should help temper the size of the error 
+        ideal_step_size = dt*(err_tol*dt/approx_err/2)**(0.25) * 0.9 # 0.9 is a safetey factor; this sets the ideal time step for the next iteration
 
         return rk5, approx_err, ideal_step_size
 
