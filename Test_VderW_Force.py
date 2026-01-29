@@ -13,8 +13,8 @@ R = 0.002
 #x = array([0.,6.*R,8.*R])
 #y = array([0.,6.*R,-R])
 random.seed(10)
-x = 10. * (random.random(10)-0.5) * R
-y = 10. * (random.random(10)-0.5) * R
+x = 10. * (random.random(50)-0.5) * R
+y = 10. * (random.random(50)-0.5) * R
 vx = zeros_like(x)
 vy = copy(vx)
 
