@@ -185,26 +185,6 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
                 Fa_x[void_idx] = force_val[void_idx]
                     
         return Fa_x * 1e14 # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
-        '''in_void = (ind_func(x_p,y_p) == 1) # logical index of particles in a void
-        n = len(Fa_x[inside & in_void]) #number of particles inside the voids
-
-        x_in_void = x_p[inside & in_void]
-        y_in_void = y_p[inside & in_void]
-
-        #good_angle = np.array([ np.abs(np.arctan((x_p[i]-x_p)/(y_p[i]-y_p))) for i in range(n) ]) # not vectorized unfortunately. Probably slows the programs considerably
-        #good_angle = (good_angle < params["angle"]/2.)[0]
-        # the above commented code was meant to restrict the angle of electric field transmission, but on further thought this is not physical.
-        m = sum(mask := (x_in_void[i] > x_p).astype(int))
-        dist_mat = np.zeros((m,m))
-        for i in range(n):
-            dist_mat[:,i] = distance(x_in_void[i], x_p[x_in_void[i] > x_p], y_in_void[i], y_p[x_in_void[i] > x_p]) # only comparing with those behind
-            #dist_vec = dist_vec[dist_vec > 1e-14] # remove the current particle from the list; don't need this anymore since we only compare to those strictly behind
-
-        Fa_x[inside & in_void] = [alpha[inside & in_void][i] * Volt / ((0.5) * Lx) if (dist_mat[:,i] < r).any() else 0. for i in range(n) ] # if the electric field can propagate, 
-
-
-    return Fa_x
-''' # decpreciated
 
 def drag_force(x, y, x_v, y_v, eta, Cd):
 
@@ -219,18 +199,6 @@ def drag_force(x, y, x_v, y_v, eta, Cd):
     return Fd_x, Fd_y
 
 #from scipy.spatial.distance import pdist, squareform # pdist takes advantage of the symmetry of distance calculations
-
-# depreciated the distance matrix
-'''def compute_dist_matrix(x, y): # compute a matrix of distances - sees use below; depreciated
-    # Reshape to column vectors to enable broadcasting
-    # (N, 1) - (1, N) results in an (N, N) matrix of differences
-    dx = x[:, np.newaxis] - x[np.newaxis, :]
-    dy = y[:, np.newaxis] - y[np.newaxis, :]
-    
-    # Apply the Euclidean distance formula: sqrt(dx^2 + dy^2)
-    dist_matrix = np.sqrt(dx**2 + dy**2)
-    
-    return dist_matrix, dx, dy'''
 
 def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"], A=params["Hamaker Constant"], Ex=params["V"]/params["L_x"], Ey=0., eps_r=150.):
     # since both use a distance matrix, combine them for efficiency - only compute matrix once
@@ -301,14 +269,6 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     np.add.at(f_vdW_x, j, -Fx_vdW) # the force on j is opposite the force on i
     np.add.at(f_vdW_y, i,  Fy_vdW)
     np.add.at(f_vdW_y, j, -Fy_vdW)
-    # the below was replaced by the vectorized verion above.
-    '''for k, p in enumerate(pairs): # p is a list of of two coordinates
-        i = p[0]
-        j = p[1]
-        f_vdW_x[i] += Fx_vdW[k] # add the postive version since the variable is defined with respect to i, not j
-        f_vdW_x[j] += -Fx_vdW[k] # add the opposite contrabution to the other particle in the pair
-        f_vdW_y[i] += Fy_vdW[k]
-        f_vdW_y[j] += -Fy_vdW[k] # add the opposite contrabution to the other particle in the pair'''
         
     #return f_vdW_x, f_vdW_y
     # coulomb force
@@ -338,60 +298,11 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
 
 def interfacial_force(n, x_p, y_p, wI, RI, Lx):
     return 0. # I'm setting this force to zero becuase I can't think of physical force that would scale strictly off of distance like this 
-    """
-    Compute interfacial force  - direct translation from Sam's matlab files 
-    """
-    # Initialize force array
-    FI_x = np.zeros(n)
-
-    # Logical index of particles inside [0, Lx]
-    inside = (x_p > 0) & (x_p < Lx)
-
-    # Apply force only for those particles satisfying the logical index
-    term1 = x_p[inside] * np.exp(-(x_p[inside]**2) / RI**2)
-    term2 = (x_p[inside] - Lx) * np.exp(-((x_p[inside] - Lx)**2) / RI**2)
-
-    FI_x[inside] = -(2 * wI / RI**2) * (term1 + term2)
-
-    # Debug
-    #print(FI_x[0])
-    #sleep(0.5)
-
-    return FI_x
 
 
 
 def pinning_force(n, x_p, y_p, w_pin, x_pin, y_pin, R_pin, Lx):
     return 0., 0. # for simplicity (temporary) - on further consideration, the pinning potential is endemic to semiconductors, of which these memristor are not made of. Thus I fail t understand why we ever had a pinning potential.
-    """
-    Vectorized pinning-force computation.
-    Parameters follow MATLAB mapping exactly.
-    """
-    
-    # Initialize force to zero
-    Fp_x = np.zeros(n)
-    Fp_y = np.zeros(n)
-
-    # Loop per pinning site (small number, so OK)
-    for i in range(len(w_pin)):
-        # vector: particle-to-pin deltas
-        dx = x_pin[i] - x_p
-        dy = y_pin[i] - y_p
-
-        # distances
-        d = np.sqrt(dx*dx + dy*dy)
-
-        # Avoid division by zero (particles exactly at pin location)
-        #d_safe = np.where(d == 0, 1e-30, d)
-
-        # Gaussian force magnitude
-        F = (2 * w_pin[i] / (R_pin[i]**2)) * np.exp(-(d**2)/(R_pin[i]**2))
-
-        # Direction components (unit vector * magn.)
-        Fp_x += F * dx
-        Fp_y += F * dy
-
-    return Fp_x, Fp_y
 
 
 
@@ -408,50 +319,6 @@ def temperature_fluctuations(n, eta, T_coeff, T, rand_x, rand_y):
 
 def residual_force(n, x_p, y_p, Lx, Ly):
     return 0., 0. # remove the residual force - instead we use the drag force to contain 
-    cell_size = 5.0 #Size of each grid cell
-    w_resid = params["w_resid"] #Strength of residual force
-    Nx = max(1, int(np.ceil(Lx / cell_size)))
-    Ny = max(1, int(np.ceil(Ly / cell_size)))
-
-    # Shift y to [0, Ly] if needed (keeps bins consistent)
-    y_shifted = y_p - np.min(y_p) # now spans ~[0, Ly]
-    # ---- Bin indices (1-based) ----
-    ix = np.clip(np.floor(x_p / cell_size).astype(int), 0, Nx-1)
-    iy = np.clip(np.floor(y_shifted / cell_size).astype(int), 0, Ny-1)
-
-    count = np.zeros((Ny, Nx))
-    np.add.at(count, (iy, ix), 1) # should be the analog of the accumarray MATLAB function
-
-    lin_idx = iy * Nx + ix
-    count.flat[lin_idx] = np.maximum(count.flat[lin_idx] - 1, 0)
-
-    '''def shift(arr, dx, dy):
-        return np.roll(np.roll(arr, dy, axis=0), dx, axis=1)'''
-
-    # Left neighbor: shift right, duplicate leftmost column
-    count_left = np.hstack((count[:, [0]], count[:, :-1]))
-
-    # Right neighbor: shift left, duplicate rightmost column
-    count_right = np.hstack((count[:, 1:], count[:, [-1]]))
-
-    # Up neighbor: shift down, duplicate last row
-    count_up = np.vstack((count[1:], count[[-1], :]))
-
-    # Down neighbor: shift up, duplicate first row
-    count_down = np.vstack((count[[0], :], count[:-1]))
-    """count_left = np.pad(count[:, :Nx - 1], ((0, 0), (1, 0)), mode="edge")
-    count_right = np.pad(count[:, 1:], ((0, 0), (0, 1)), mode="edge")
-    count_up = np.pad(count[1:, :], ((0, 1), (0, 0)), mode="edge")
-    count_down = np.pad(count[:-1, :], ((1, 0), (0, 0)), mode="edge")"""
-
-    rho_left  = count_left.flat[lin_idx]
-    rho_right = count_right.flat[lin_idx]
-    rho_up    = count_up.flat[lin_idx]
-    rho_down  = count_down.flat[lin_idx]
-
-    Fr_x = w_resid * (rho_left - rho_right)
-    Fr_y = w_resid * (rho_down - rho_up)
-    return Fr_x, Fr_y
 
 
 def finishing_array(x_p, L, fin):
