@@ -173,9 +173,8 @@ def run_simulation(params):
 
         # now we have completed the integration
     # now the file writer is closed
-print("Simulation complete.")
-
-return t, states
+    print("Simulation complete.")
+    return t, states
 
 # these functions below are no longer in use
 def RKF45_step(t,initial,dt,err_tol=1e-3):
