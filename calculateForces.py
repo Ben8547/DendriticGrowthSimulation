@@ -232,7 +232,6 @@ def drag_force(x, y, x_v, y_v, eta, Cd):
     
     return dist_matrix, dx, dy'''
 
-
 def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"], A=params["Hamaker Constant"], Ex=params["V"]/params["L_x"], Ey=0., eps_r=150.):
     # since both use a distance matrix, combine them for efficiency - only compute matrix once
     '''
@@ -278,7 +277,8 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     h = np.maximum(h, h_min) # Prevent numerical blow-up (we will be dividing by a power of h later on)
 
     # Hamaker vdW force magnitude 
-    F_vdW_mag = A * R / (12.0 * h**2) # Derjaguin approximation - h << R
+    d = h+2.*R
+    F_vdW_mag =  A/6 * ( (4.*R**2.*d)/(d**2. -4.*R**2.)**2 + (4.*R**2. * d)/(d**4.) + (2.*d)/(d**2.-4.*R**2.) - 2./(d)  ) #A * R / (12.0 * h**2) # Derjaguin approximation - h << R
 
     # Unit vectors; need to project the force onto the vectro in between the two particles
     ex = dx / dist
