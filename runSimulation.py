@@ -249,7 +249,7 @@ def run_simulation(params):
         from calculateCurrent import calculate_current
         t = tspan[0]
         current_time_indicator = 1 # the next time at which to capture the animation frame; index of the tspan array
-        from scipy.integrate import RK45
+        from scipy.integrate import RK45, BDF, Radau # various integrators to try
 
         with writer.saving(fig, "test_simulation_output.mp4", dpi=100): # this enables streaming the simulation data to a file concurrent with the simualtion - enables an approximate 5x speed up
             """while t < t_end: # variable time step elocity verlet integrator
@@ -285,7 +285,7 @@ def run_simulation(params):
                     # Reject step -> reduce time step
                     time_step = max(0.5 * time_step, ideal_step)""" # manual RKF45 integrator - too slow
             # use scipy integrator instead
-            solver = RK45(
+            solver = BDF(
             fun=integrable_calcualte_forces,
             t0=tspan[0],
             y0=initial,
