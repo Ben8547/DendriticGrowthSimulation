@@ -28,14 +28,14 @@ def force(t,state):
     out=vdW_Force_AND_Dipole_Force(coord, tree, R=R, A=0.00001, Ex=params["V"]/params["L_x"], Ey=0., eps_r=150.)
     return append(state[len(state)//2:3*len(state)//4],append(state[3*len(state)//4:len(state)],append(out[0],out[1])))
 
-solver = BDF(
+solver = RK45(
         fun=force,
         t0=0.,
         y0=initial,
         t_bound=tspan[-1],
         max_step= 10./1000.,
-        rtol=1e-5,
-        atol=1e-5,
+        rtol=1e-4,
+        atol=1e-4,
         )
 
 current_time_indicator = 1

@@ -185,7 +185,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     :param R: Radius of the silver nanoparticles (meters).
     :param A: Hamaker constant (Joules).
     '''
-    return 0.,0.
+    #return 0.,0. # debug
     # In the Hamacker model, the van der Waals force between two spheres of radius R1 and R2 with separation r is (A)(R1)(R2) / 6(R1+R2)r^6
     # both particles feels the force reciprically via Newton's third law
 
@@ -208,7 +208,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     dist2 = dx**2 + dy**2 # list of pair y-distances squaresd
     dist = np.sqrt(dist2) # list of pair y-distances
 
-    mask = (dist < 2.00001 * R)  # logical index of particles that are less than two partilce radii apart; we only compute vdw force for *not* these to prevent collisions
+    mask = (dist < 2.001 * R)  # logical index of particles that are less than two partilce radii apart; we only compute vdw force for *not* these to prevent collisions
 
     # van der Waals Calculation
     
