@@ -61,14 +61,6 @@ def run_simulation(params):
     # we write the velocity verlet function here and include the ability to stream the simualtion directly into a file. Thus we don't need to wait at the end for the animation to compile
     #error_tol = params['Verlet_error_per_unit_time']  
     from matplotlib.animation import FFMpegWriter # for streaming the frames into  a file
-    # recall :
-    #fun=integrable_calcualte_forces
-    #t_span=(tspan[0], tspan[-1])
-    #y0=initial
-    #t_eval=tspan
-    #t_end = tspan[-1]
-    #times = np.zeros(1,float)
-    #time_step = tspan[1] - tspan[0]
 
     # set up the animation figrue and artists
     writer = FFMpegWriter(fps=10)
@@ -134,7 +126,7 @@ def run_simulation(params):
 
     with writer.saving(fig, "test_simulation_output.mp4", dpi=100): # this enables streaming the simulation data to a file concurrent with the simualtion - enables an approximate 5x speed up
         # use scipy integrator
-        solver = BDF(
+        solver = RK45(
         fun=integrable_calcualte_forces,
         t0=tspan[0],
         y0=initial,
@@ -167,7 +159,7 @@ def run_simulation(params):
                     ))
                 current_graph.set_data(times,current_histroy)
                 writer.grab_frame() # write the most recent frame to the file
-            print(f"time: {t}, current {current_histroy[-1]}") # debug tool
+                print(f"time: {t}, current {current_histroy[-1]}") # debug tool
         states = solver.y
         t = solver.t
 

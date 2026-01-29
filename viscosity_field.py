@@ -9,7 +9,9 @@ The way Sam set that up did not seem physical nor was it affecting any visible c
 from numpy import asarray, zeros_like, exp, mean, column_stack
 from numpy.random import default_rng
 from defineParameters import params
-from scipy.stats import beta # beta distrobution to push the voids towards the electrodes
+#from scipy.stats import beta # beta distrobution to push the voids towards the electrodes
+import jax
+import jax.numpy as jnp
 
 
 def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params["n_regions"], blob_scale=params["blob_scale"], seed=params["seed"]):
@@ -36,26 +38,38 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
     rng = default_rng(seed)
 
     # Blob centers
-    x_centers = Lx * rng.beta(a=0.5, b=0.5, size=n_regions)# for a = b = 0.5 the centers will be more likely to appear at the edges
-    y_centers = (rng.uniform(0, 1, size=n_regions) - 0.5) * Ly
-    centers = column_stack([x_centers, y_centers])
+    x_centers = jnp.copy(Lx * rng.beta(a=0.5, b=0.5, size=n_regions))# for a = b = 0.5 the centers will be more likely to appear at the edges
+    y_centers = jnp.copy((rng.uniform(0, 1, size=n_regions) - 0.5) * Ly)
+    centers = jnp.column_stack([x_centers, y_centers])
 
     # Blob widths and amplitudes
-    sigmas = blob_scale * min(Lx, Ly) * rng.uniform(0.7, 1.3, size=n_regions) # this determines how quickly the blob's influence decays
-    amplitudes = rng.uniform(0.8, 1.2, size=n_regions)
+    sigmas = jnp.copy(blob_scale * min(Lx, Ly) * rng.uniform(0.7, 1.3, size=n_regions)) # this determines how quickly the blob's influence decays
+    amplitudes = jnp.copy(rng.uniform(0.8, 1.2, size=n_regions))
 
     # Threshold chosen so regions remain disconnected and globular
     threshold = 0.5 * mean(amplitudes)
 
     def indicator(x, y):
-        x = asarray(x)
-        y = asarray(y)
+        x1 = jnp.copy(x)
+        y1 = jnp.copy(y) # this serves to convert the input numpy arrays into JAX arrays
 
-        phi = zeros_like(x, dtype=float)
-        for (cx, cy), A, s in zip(centers, amplitudes, sigmas):
-            phi += A * exp(-((x - cx)**2 + (y - cy)**2) / (2 * s**2))
+        #phi = np.zeros_like(x1)
+        '''for (cx, cy), A, s in zip(centers, amplitudes, sigmas):
+            phi += A * np.exp(-((x1 - cx)**2 + (y1 - cy)**2) / (2 * s**2))''' # pre JAX conversion
+        cx = centers[:, 0, jnp.newaxis, jnp.newaxis]
+        cy = centers[:, 1, jnp.newaxis, jnp.newaxis]
+        A = amplitudes[:, jnp.newaxis, jnp.newaxis]
+        s = sigmas[:, jnp.newaxis, jnp.newaxis]
+
+        # Calculate all Gaussians simultaneously: shape becomes (N, H, W)
+        phi_all = A * jnp.exp(-((x1 - cx)**2 + (y1 - cy)**2) / (2 * s**2))
+
+        # Sum across the N dimension (the individual blobs)
+        phi = jnp.sum(phi_all, axis=0)
 
         return (phi > threshold) # returns the Boolean value
+    
+    indicator = jax.jit(indicator) # turn function into a jax function - should speed up signifigantly
 
     return indicator
 

@@ -3,6 +3,8 @@ from defineParameters import params
 #from time import sleep # for debugging
 from viscosity_field import make_globular_indicator
 from scipy.spatial import cKDTree # makes spatial searches much faster
+import jax
+import jax.numpy as jnp
 
 
 ind_func = make_globular_indicator() # get a function to check viscocity state; index function of the void set
@@ -50,35 +52,7 @@ def calculate_forces(t, states, params):
     # Turn the points into a KDTree for easy spatial search
     coords = np.column_stack((x_p, y_p))
 
-    Tree = cKDTree(coords)
-
-    # ------------------------
-    # Compute current at intervals
-    # ------------------------
-    '''
-    if tindex < len(params["tspan"]) and t > params["tspan"][tindex]:
-        rand_dirs_global_x = 2 * np.random.randint(0, 2, n) - 1
-        rand_dirs_global_y = 2 * np.random.randint(0, 2, n) - 1
-
-        if tindex % 2 == 0:
-            if Volt == 0.: I_last = 0. # this should save a lot of time
-            else:
-                I_last = calculate_current(
-                    x_p, y_p, params["L_x"],params["L_y"], Volt,
-                    params["lambda"], params["Rt"], T, params['num_e']#params["steps"], params["num_e"]
-                )
-
-        tindex += 1
-        """if tindex > 1000 and Volt != 0 and params["is_Voltage_constant"]: # after 1000 interations set voltage to 0; only do if the voltage is constant
-            Volt = 0
-            print("Voltage set to zero after 1000 iterations")""" # for relaxation models
-
-        print(f"Time index {tindex} / {len(params['tspan'])}")
-        print(f"Computed I at t = {tindex}, I = {I_last:.3e}")
-
-        I_saved.append(I_last)
-        t_saved.append(t)
-        ''' # this will be transferred to the runSimulation.py file since nothing in the forces uses it anyway
+    Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
 
     # ------------------------
     # Forces
@@ -117,8 +91,6 @@ def calculate_forces(t, states, params):
     dxdt[(2*n):(3*n)] = y_v * fin_array
     dxdt[(3*n):(4*n)] = (forces_y / eta) * fin_array
     dxdt[4 * n] = (params["CT"] * params["Q"]) - params["k"] * (T - params["T_0"]) #temperature evolution
-    #print(dxdt[0])
-    #sleep(0.5)
     return dxdt
 
 
@@ -307,10 +279,12 @@ def pinning_force(n, x_p, y_p, w_pin, x_pin, y_pin, R_pin, Lx):
 
 
 def temperature_fluctuations(n, eta, T_coeff, T, rand_x, rand_y):
-    noise_scale = np.sqrt(eta * T_coeff * T)
+    noise_scale = jnp.sqrt(eta * T_coeff * T)
     Ft_x = rand_x * noise_scale
     Ft_y = rand_y * noise_scale
     return Ft_x/100., Ft_y/100. # scaled so that these forces are not dominant - they should be small relative to the other forces
+
+temperature_fluctuations = jax.jit(temperature_fluctuations)
 
 # # ------------------------
 # # TODO: Residual Force
