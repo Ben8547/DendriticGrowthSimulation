@@ -328,7 +328,7 @@ def run_simulation(params):
     return t, states
 
 # these functions below are no longer in use
-def RKF45_step(t,initial,dt,err_tol):
+def RKF45_step(t,initial,dt,err_tol=1e-3):
 
     # Change in positions
         initial_copy = np.copy(initial) # as to not mutate the original array
