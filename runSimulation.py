@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
 #import imageio
 
-from calculateForces import integrable_calcualte_forces
+from calculateForces import integrable_calcualte_forces, ind_func
 
 
 def run_simulation(params):
@@ -52,7 +52,6 @@ def run_simulation(params):
     # Run ODE simulation
     # ------------------------
     print("Starting solver...")
-    from calculateForces import tindex, V
     tindex = 1
     V = params["V"]
 
@@ -89,9 +88,6 @@ def run_simulation(params):
         color=(1.0, 0.8431, 0.0),
         alpha=0.3,
     )
-
-    from viscosity_field import make_globular_indicator
-    ind_func = make_globular_indicator()
 
     x = np.linspace(0.,params["L_x"],1000)
     y = np.linspace(-params["L_y"]/2.,params["L_y"]/2.,1000)
@@ -133,7 +129,7 @@ def run_simulation(params):
         t_bound=tspan[-1],
         rtol=params['rtol'],
         atol=params['atol'],
-        max_step=tspan[1]-tspan[0] # enables the animation frames to be evenly spaced
+        max_step=min(tspan[1]-tspan[0],1e-2) # enables the animation frames to be evenly spaced
         )
         current_time_indicator = 1
         times = [0.]
@@ -141,6 +137,13 @@ def run_simulation(params):
             solver.step() # one step
             t = solver.t # current time
             y = solver.y # current state vector
+            if not params['structual_in_force']: # zero out forward momentum in the voids if no particles are behind - forward movement cannot be supported in the void without existing protrusion
+                x_p = y[0:n]
+                y_p = y[2*n:3*n]
+                inside = (x_p < Lx)
+                is_void = (ind_func(x_p, y_p) == 1)[0]
+                void_indices = np.where(inside & is_void)[0]
+                # the current method is fine - this can be added later if needed
             # now that everything is updated, we need to stream this data into an animation file
             if t >= tspan[current_time_indicator]: 
                 current_time_indicator += 1

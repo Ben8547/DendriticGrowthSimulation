@@ -120,16 +120,17 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
 
     # Logical index of particles inside domain - prevents forward motion of particles outside of the bounded region
     inside = (x_p < Lx)
-    is_void = (ind_func(x_p, y_p) == 1)
+    is_void = (ind_func(x_p, y_p) == 1)[0]
 
-    if False: # Sam's orginal code; debug gate
-        Fa_x[inside] = alpha[inside] * Volt / ((0.5) * Lx)
+    if not params["structual_in_force"]: # Sam's orginal code; debug gate
+        Fa_x[inside] = alpha[inside] * Volt / ((0.5) * Lx) * 1e15
+        return Fa_x
 
-    if True: # debug gate
+    else: # debug gate
         # Apply scaling only to particles within [0,Lx]
         # only apply force to particle inside of a void
         out_void = ~is_void # logcal index: particle is a void region <=> insulated from the electric field
-        Fa_x[inside & (out_void)] = alpha[inside & (out_void)] * Volt / ((0.5) * Lx) # assign force as normal if not in a void region and inside the domain noteably, if Volt is zero, then so is the force
+        Fa_x[inside & out_void] = alpha[inside & out_void] * Volt / ((0.5) * Lx) # assign force as normal if not in a void region and inside the domain noteably, if Volt is zero, then so is the force
 
         '''
         This section deals in adding back a force to those particles inside of the void if there 
@@ -156,7 +157,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
             if np.any(is_behind):
                 Fa_x[void_idx] = force_val[void_idx]
                     
-        return Fa_x * 1e14 # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
+        return Fa_x * 1e15 # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
 
 def drag_force(x, y, x_v, y_v, eta, Cd):
 
@@ -184,7 +185,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     :param R: Radius of the silver nanoparticles (meters).
     :param A: Hamaker constant (Joules).
     '''
-
+    return 0.,0.
     # In the Hamacker model, the van der Waals force between two spheres of radius R1 and R2 with separation r is (A)(R1)(R2) / 6(R1+R2)r^6
     # both particles feels the force reciprically via Newton's third law
 
@@ -282,7 +283,7 @@ def temperature_fluctuations(n, eta, T_coeff, T, rand_x, rand_y):
     noise_scale = jnp.sqrt(eta * T_coeff * T)
     Ft_x = rand_x * noise_scale
     Ft_y = rand_y * noise_scale
-    return Ft_x/100., Ft_y/100. # scaled so that these forces are not dominant - they should be small relative to the other forces
+    return Ft_x/20., Ft_y/20. # scaled so that these forces are not dominant - they should be small relative to the other forces
 
 temperature_fluctuations = jax.jit(temperature_fluctuations)
 

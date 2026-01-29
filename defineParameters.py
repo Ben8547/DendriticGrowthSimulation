@@ -74,6 +74,7 @@ params = { # create a dictionary to hold parameters
     
     "is_Voltage_constant" : False,
     "V" : 6.,#3., # applies voltage
+    "structual_in_force" : True, # If true, the structual impact of the voids is computed in the applied force, if true it is computed in the solver
 
     #--------------------------------
     #Residual Stress Parameters
@@ -122,7 +123,7 @@ params['R_pin'] = rand(params['m'],1) * 10. # Pinning potential distance
 params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from https://www.spiraxsarco.com/learn-about-steam/steam-engineering-principles-and-heat-transfer/heat-transfer
 
 #applied electric field parameters
-params['alpha'] = rand(params['n']) * 1e-10  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
+params['alpha'] = 5e-11 +  rand(params['n']) * 5e-11  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
 params['eps_0'] = 8.854e-12
 params["Average_particle_Radius"] = params["elec_transfer_radius"]/2. # since the particles must touch for electric transfer
 params["Hamaker Constant"] = 1.5 #1. # van der Waals force constant - depends upon material
