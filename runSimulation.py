@@ -292,6 +292,7 @@ def run_simulation(params):
             t_bound=tspan[-1],
             rtol=params['rtol'],
             atol=params['atol'],
+            max_step=tspan[1]-tspan[0] # enables the animation frames to be evenly spaced
             )
             current_time_indicator = 1
             times = [0.]

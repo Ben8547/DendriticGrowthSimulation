@@ -184,7 +184,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
             if np.any(is_behind):
                 Fa_x[void_idx] = force_val[void_idx]
                     
-        return Fa_x
+        return Fa_x * 1e14 # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
         '''in_void = (ind_func(x_p,y_p) == 1) # logical index of particles in a void
         n = len(Fa_x[inside & in_void]) #number of particles inside the voids
 
