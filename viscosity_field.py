@@ -56,7 +56,7 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
         #phi = np.zeros_like(x1)
         '''for (cx, cy), A, s in zip(centers, amplitudes, sigmas):
             phi += A * np.exp(-((x1 - cx)**2 + (y1 - cy)**2) / (2 * s**2))''' # pre JAX conversion
-        cx = centers[:, 0, jnp.newaxis, jnp.newaxis]
+        cx = centers[:, 0, jnp.newaxis, jnp.newaxis] # by embeding the arrays in a higher dimension, this creates a matrix when subtrated from the x1 vector. Thus we compute in a matrix and sum along a single axis of the matrix to get our resultant vector.
         cy = centers[:, 1, jnp.newaxis, jnp.newaxis]
         A = amplitudes[:, jnp.newaxis, jnp.newaxis]
         s = sigmas[:, jnp.newaxis, jnp.newaxis]
