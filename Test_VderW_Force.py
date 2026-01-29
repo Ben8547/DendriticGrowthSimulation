@@ -1,5 +1,5 @@
 from calculateForces import vdW_Force_AND_Dipole_Force
-from scipy.integrate import RK45
+from scipy.integrate import RK45, Radau, BDF
 from defineParameters import params
 from numpy import array, column_stack, append,linspace, random,zeros_like, copy
 from scipy.spatial import cKDTree
@@ -28,7 +28,7 @@ def force(t,state):
     out=vdW_Force_AND_Dipole_Force(coord, tree, R=R, A=0.00001, Ex=params["V"]/params["L_x"], Ey=0., eps_r=150.)
     return append(state[len(state)//2:3*len(state)//4],append(state[3*len(state)//4:len(state)],append(out[0],out[1])))
 
-solver = RK45(
+solver = BDF(
         fun=force,
         t0=0.,
         y0=initial,
