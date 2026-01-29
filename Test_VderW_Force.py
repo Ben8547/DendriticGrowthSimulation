@@ -12,9 +12,9 @@ R = 0.002
 #y = array([0.,4.*R])
 #x = array([0.,6.*R,8.*R])
 #y = array([0.,6.*R,-R])
-random.seed(10)
-x = 10. * (random.random(10)-0.5) * R
-y = 10. * (random.random(10)-0.5) * R
+random.seed(20)
+x = 10. * (random.random(5)-0.5) * R
+y = 10. * (random.random(5)-0.5) * R
 vx = zeros_like(x)
 vy = copy(vx)
 
@@ -60,7 +60,7 @@ with writer.saving(fig, "test-vdw.mp4", dpi=100):
         # now that everything is updated, we need to stream this data into an animation file
         if t >= tspan[current_time_indicator]: 
             current_time_indicator += 1
-            particles.set_data(y[0:len(y)//2],y[len(y)//2:len(y)])
+            particles.set_data(y[0:len(y)//4],y[len(y)//4:len(y)//2])
             # get the electric current data
             writer.grab_frame() # write the most recent frame to the file
         print(f"time: {t}") # debug tool
