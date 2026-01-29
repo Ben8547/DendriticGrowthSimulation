@@ -310,51 +310,31 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
         f_vdW_y[i] += Fy_vdW[k]
         f_vdW_y[j] += -Fy_vdW[k] # add the opposite contrabution to the other particle in the pair'''
         
-    return f_vdW_x, f_vdW_y
-    # Dipole Calculation - reomved for now
+    #return f_vdW_x, f_vdW_y
+    # coulomb force
 
-    ''' eps0 = params["eps_0"]
-    p_mag = 4. * np.pi * eps0 * eps_r * R**3
-    px = p_mag * Ex
-    py = p_mag * Ey
+    eps0 = params["eps_0"]
 
-    # Unit vectors
-    ux = dx / dist
-    uy = dy / dist
+    q = params["alpha"] # charge vector
+    q1 = q[i]
+    q2 = q[j]
 
-    # Dot products
-    p_dot_u = px * ux + py * uy
-    p_dot_p = px**2 + py**2
+    f_c_x  = np.zeros_like(f_vdW_x)
+    f_c_y = np.copy(f_c_x)
 
-    # Softened distance to prevent blow-up
-    r_soft = np.maximum(dist, 2.2 * R)
+    f_coulomb_mag = -np.divide(q1*q2 , (eps0*eps_r * h**2 * 4. * np.pi)) # this should be repulsive so we add the minus sign
 
-    # Dipole force prefactor
-    dipole_pre = 3. / (4. * np.pi * eps0 * eps_r * r_soft**4)
+    F_c_x = F_vdW_mag * ex # ex and ey already contain the force direciton.
+    F_c_y = F_vdW_mag * ey 
+    F_c_x[mask] = 0. # zero the forces when the distances are too small
+    F_c_y[mask] = 0.
 
-    # Force components
-    fx_dipole = dipole_pre * (
-        p_dot_u * px +
-        p_dot_p * ux -
-        5. * (p_dot_u**2) * ux
-    )
-
-    fy_dipole = dipole_pre * (
-        p_dot_u * py +
-        p_dot_p * uy -
-        5. * (p_dot_u**2) * uy
-    )'''
-    ux = dx / dist
-    uy = dy / dist
-    fx_dipole = 0.
-    fy_dipole = 0.
-
-    # Combine and project force vectors
-
-    fx_total_pairs = fx_dipole + (f_vdW_x)
-    fy_total_pairs = fy_dipole + (f_vdW_y)
+    np.add.at(f_c_x, i,  F_c_x)
+    np.add.at(f_c_x, j, -F_c_x) # the force on j is opposite the force on i
+    np.add.at(f_c_y, i,  F_c_y)
+    np.add.at(f_c_y, j, -F_c_y)
     
-    return fx_total_pairs, fy_total_pairs
+    return f_c_x + f_vdW_x, f_c_y + f_vdW_y
 
 def interfacial_force(n, x_p, y_p, wI, RI, Lx):
     return 0. # I'm setting this force to zero becuase I can't think of physical force that would scale strictly off of distance like this 
