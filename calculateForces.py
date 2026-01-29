@@ -324,8 +324,8 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
 
     f_coulomb_mag = -np.divide(q1*q2 , (eps0*eps_r * h**2 * 4. * np.pi)) # this should be repulsive so we add the minus sign
 
-    F_c_x = F_vdW_mag * ex # ex and ey already contain the force direciton.
-    F_c_y = F_vdW_mag * ey 
+    F_c_x = f_coulomb_mag * ex # ex and ey already contain the force direciton.
+    F_c_y = f_coulomb_mag * ey 
     F_c_x[mask] = 0. # zero the forces when the distances are too small
     F_c_y[mask] = 0.
 
