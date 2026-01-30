@@ -110,8 +110,8 @@ def calculate_forces(t, states, params):
     forces_x = Fa_x + Fd_x + FI_x + Fp_x + Ft_x + Fr_x + Fc_x + F_vdWx # resultant force in the x direction
     forces_y = 0.   + Fd_y + 0.   + Fp_y + Ft_y + Fr_y + Fc_y + F_vdWy  # resultant force in the y direction
 
-    forces_x[null_forces & (forces_x > 0)] = 0. # set the force to zero if the particle is unsupported and the force is positive
-    x_v[null_forces & (x_v > 0)] = 0. # same with the velocities
+    forces_x[null_forces] = where(forces_x[null_forces] > 0, 0. ,forces_x[null_forces]) # set the force to zero if the particle is unsupported and the force is positive
+    x_v[null_forces] = where(x_v[null_forces] > 0,0.,x_v[null_forces]) # same with the velocities; I beleive this is vectorized
     # leave the y movement unaffected - it sees little purtubation as is and would have less bearing anyways
 
     
@@ -133,7 +133,7 @@ def calculate_forces(t, states, params):
 # Subfunctions
 # -----------------------------------------------------
 
-def distances(x1, x2, y1, y2):
+'''def distances(x1, x2, y1, y2):
     dx = x1 - x2
     dy = y1 - y2
     d = sqrt(dx ** 2 + dy ** 2)
@@ -144,7 +144,7 @@ def distance(x1, x2, y1, y2):
     dy = y1 - y2
     d = sqrt(dx ** 2 + dy ** 2)
     return d
-
+'''  #depreciated; slow
 
 def applied_force(n, coords, treeData, alpha, V, Lx, t): # (From Electric Field)
     # Initialize force to zero
@@ -208,7 +208,7 @@ def drag_force(x, y, x_v, y_v, eta, Cd):
     #eta_prime =  array([ eta if ind_func(x[i],y[i]) == 1 else eta*params['viscosity_multiplier'] for i in range(len(x_v))])
     # the above can be vectorized for increased efficiency
     VoidMask = (ind_func(x,y) == 1)
-    eta_prime =  where(VoidMask, eta, eta * params['viscosity_multiplier']) # results in the same vector as before, but much quicker
+    eta_prime =  where(VoidMask[0], eta, eta * params['viscosity_multiplier']) # results in the same vector as before, but much quicker
 
     Fd_x = -eta_prime * Cd * x_v
     Fd_y = -eta_prime * Cd * y_v
