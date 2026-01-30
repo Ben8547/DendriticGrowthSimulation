@@ -108,7 +108,7 @@ def run_simulation(params):
     current_histroy = [0.] # initialize the current history
 
     current_graph, = ax2.plot([0.], current_histroy)
-    ax2.set_ylim(0.,2e-5)
+    ax2.set_ylim(0.,2e-4)
     ax2.set_xlim(0.,tspan[-1])
     ax2.set_ylabel("Current I")
     ax2.set_xlabel("Time")

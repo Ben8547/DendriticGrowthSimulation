@@ -59,7 +59,7 @@ def calculate_forces(t, states, params):
 
     Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
 
-    # Identify indices of particles in a void
+    '''# Identify indices of particles in a void
     inside = (x_p < params['L_x'])
     is_void = (ind_func(x_p, y_p) == 1)[0]
     out_void = ~is_void
@@ -73,21 +73,20 @@ def calculate_forces(t, states, params):
 
     for i, void_idx in enumerate(void_indices): # ideally we would not appeal to a loop, but given how the code has been built thus far I cannot think of a way to avoid it.
         # neighbors_list[i] contains indices of all particles within radius r
-        potential_neighbors =  array(neighbors_list[i]) # neigbors of the ith particle
+        potential_neighbors =  neighbors_list[i] # neigbors of the ith particle
         
         # only care about neighbors that are strictly behind (smaller x). also exclude the particle itself (distance 0)
-        xi = x_p[void_idx]
-        is_behind = x_p[potential_neighbors] < xi
+        is_behind = x_p[potential_neighbors] < x_p[void_idx]
 
-        if any(is_behind) == True:
-            null_forces.append(void_idx) # add the index to a list of forces to set to zero (if they are positive)
+        if any(is_behind) == True:  # if at least one neighbor is behind - accept the force, otherwise zero it
+            null_forces.append(void_idx) # add the index to a list of forces to set to zero (if they are positive)'''
 
-    tree_data = (inside,is_void,out_void,is_behind)
+    #tree_data = (inside,is_void,out_void)
 
     # ------------------------
     # Forces
     # ------------------------
-    Fa_x = applied_force(n, coords, tree_data, params["alpha"], Volt, params["L_x"],t)
+    Fa_x = applied_force(n, coords, Tree, params["alpha"], Volt, params["L_x"],t)
     F_vdWx, F_vdWy = vdW_Force_AND_Dipole_Force(coords,Tree)
     Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["eta"], params["Cd"])
     FI_x = interfacial_force(n, x_p, y_p, params["wI"], params["RI"], params["L_x"])
@@ -110,8 +109,8 @@ def calculate_forces(t, states, params):
     forces_x = Fa_x + Fd_x + FI_x + Fp_x + Ft_x + Fr_x + Fc_x + F_vdWx # resultant force in the x direction
     forces_y = 0.   + Fd_y + 0.   + Fp_y + Ft_y + Fr_y + Fc_y + F_vdWy  # resultant force in the y direction
 
-    forces_x[null_forces] = where(forces_x[null_forces] > 0, 0. ,forces_x[null_forces]) # set the force to zero if the particle is unsupported and the force is positive
-    x_v[null_forces] = where(x_v[null_forces] > 0,0.,x_v[null_forces]) # same with the velocities; I beleive this is vectorized
+    #forces_x[null_forces] = where(forces_x[null_forces] > 0, 0. ,forces_x[null_forces]) # set the force to zero if the particle is unsupported and the force is positive
+    #x_v[null_forces] = where(x_v[null_forces] > 0,0.,x_v[null_forces])# ideally we include this, but it slows down the program a TON - probably because it makes the velocity vector discontinuous # same with the velocities; I beleive this is vectorized
     # leave the y movement unaffected - it sees little purtubation as is and would have less bearing anyways
 
     
@@ -146,7 +145,7 @@ def distance(x1, x2, y1, y2):
     return d
 '''  #depreciated; slow
 
-def applied_force(n, coords, treeData, alpha, V, Lx, t): # (From Electric Field)
+def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
     # Initialize force to zero
     Fa_x = zeros(n)
 
@@ -157,7 +156,7 @@ def applied_force(n, coords, treeData, alpha, V, Lx, t): # (From Electric Field)
     inside = (x_p < Lx)
     is_void = (ind_func(x_p, y_p) == 1)[0]
 
-    if True: # Sam's orginal code; debug gate
+    if False: # Sam's orginal code; debug gate
         Fa_x[inside] = alpha[inside] * Volt / ((0.5) * Lx)
         return Fa_x * 1e15
 
@@ -165,7 +164,7 @@ def applied_force(n, coords, treeData, alpha, V, Lx, t): # (From Electric Field)
         # Apply scaling only to particles within [0,Lx]
         # only apply force to particle inside of a void
 
-        inside, is_void, out_void, is_behind = treeData
+        #inside, is_void, out_void = treeData
         void_indices =  where(inside & is_void)[0] # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
         
         '''
@@ -176,25 +175,26 @@ def applied_force(n, coords, treeData, alpha, V, Lx, t): # (From Electric Field)
         '''
         force_val = alpha * Volt / (0.5 * Lx)
 
-        """# Identify indices of particles in a void
-        void_indices =  where(inside & is_void)[0] # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
+        Fa_x = where( inside & ~is_void ,force_val,0.) # set force not in void to the deisred value
+
+        # Identify indices of particles in a void
+        #void_indices =  where(inside & is_void)[0] # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
         
         # query_ball_point finds all particles within radius 'r' for each void particle
-        #neighbors_list = kdTree.query_ball_point(coords[void_indices], r) # this returns an array of lists. The list in the ith element of the array contains the indicies of the points within a distance r of the ith particle
-        _, neighbors_list = kdTree.query(coords[void_indices], k=20, distance_upper_bound=r) # this gives a rectangluar array which is preffered for the below usage; max number of neighbors is 20
-        neighbors_list[neighbors_list == 350] = 0 # fix the padding
+        neighbors_list = kdTree.query_ball_point(coords[void_indices], r) # this returns an array of lists. The list in the ith element of the array contains the indicies of the points within a distance r of the ith particle
+        #_, neighbors_list = kdTree.query(coords[void_indices], k=20, distance_upper_bound=r) # this gives a rectangluar array which is preffered for the below usage; max number of neighbors is 20
+        #neighbors_list[neighbors_list == 350] = 0 # fix the padding
 
         for i, void_idx in enumerate(void_indices):
             # neighbors_list[i] contains indices of all particles within radius r
             potential_neighbors =  array(neighbors_list[i]) # neigbors of the ith particle
             
             # only care about neighbors that are strictly behind (smaller x). also exclude the particle itself (distance 0)
-            xi = x_p[void_idx]
-            is_behind = x_p[potential_neighbors] < xi # moved to the parent function
+            is_behind = x_p[potential_neighbors] < x_p[void_idx]
     
             
             if  any(is_behind):
-                Fa_x[void_idx] = force_val[void_idx] # this is vectorized (poorly) below"""
+                Fa_x[void_idx] = force_val[void_idx] # this is vectorized (incorrectly) below
 
         '''cond = x_p[void_indices] < npmax(x_p[neighbors_list],axis=1) # should see if each particles x distance is less than the largest x-distance of its neighbors
         is_behind = where( cond ,True,False)

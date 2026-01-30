@@ -43,7 +43,7 @@ params = { # create a dictionary to hold parameters
     # --------------------------------
     
     "n" : 350, #500 # Number of particles
-    "simulation_length" : 1.5, #6, # in seconds
+    "simulation_length" : 0.6, #6, # in seconds
 
     #--------------------------------
     # Initial position box and material size
@@ -126,7 +126,7 @@ params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from 
 params['alpha'] = 5e-11 +  rand(params['n']) * 5e-11  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
 params['eps_0'] = 8.854e-12
 params["Average_particle_Radius"] = params["elec_transfer_radius"]/2. # since the particles must touch for electric transfer
-params["Hamaker Constant"] = 2. #1. # van der Waals force constant - depends upon material
+params["Hamaker Constant"] = 4. #1. # van der Waals force constant - depends upon material
 
 #--------------------------------
 # Drag Force Parameters
