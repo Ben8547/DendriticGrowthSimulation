@@ -1,4 +1,5 @@
-import numpy as np
+from numpy import random, zeros, meshgrid, linspace, copy, concatenate, where#, sqrt
+#from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
 #import imageio
@@ -17,7 +18,7 @@ def run_simulation(params):
     I_saved.clear()
     t_saved.clear()'''
 
-    np.random.seed(1)
+    random.seed(1)
 
     # ------------------------
     # Unpack parameters
@@ -34,19 +35,19 @@ def run_simulation(params):
     # ------------------------
     # Randomize initial particle positions
     # ------------------------
-    xo = 2.5 * np.random.rand(n)  - 2.5 # start behind the device - should prevent starting in voids
-    yo = electrode_height * np.random.rand(n) - 0.5 * electrode_height
+    xo = 2.5 * random.rand(n)  - 2.5 # start behind the device - should prevent starting in voids
+    yo = electrode_height * random.rand(n) - 0.5 * electrode_height
 
     # ------------------------
     # Zero all initial particle velocities
     # ------------------------
-    vox = np.zeros(n)
-    voy = np.zeros(n)
+    vox = zeros(n)
+    voy = zeros(n)
 
     # ------------------------
     # Initial state vector
     # ------------------------
-    initial = np.concatenate([xo, vox, yo, voy, [To]]) # To is wrapped in a list so that concatenate resolves
+    initial = concatenate([xo, vox, yo, voy, [To]]) # To is wrapped in a list so that concatenate resolves
 
     # ------------------------
     # Run ODE simulation
@@ -89,10 +90,10 @@ def run_simulation(params):
         alpha=0.3,
     )
 
-    x = np.linspace(0.,params["L_x"],1000)
-    y = np.linspace(-params["L_y"]/2.,params["L_y"]/2.,1000)
+    x = linspace(0.,params["L_x"],1000)
+    y = linspace(-params["L_y"]/2.,params["L_y"]/2.,1000)
 
-    X, Y = np.meshgrid(x,y)
+    X, Y = meshgrid(x,y)
 
     Z = ind_func(X,Y)
     pcm = ax1.pcolormesh(X, Y, Z, cmap="pink", shading="auto", alpha=0.3)
@@ -142,7 +143,7 @@ def run_simulation(params):
                 y_p = y[2*n:3*n]
                 inside = (x_p < Lx)
                 is_void = (ind_func(x_p, y_p) == 1)[0]
-                void_indices = np.where(inside & is_void)[0]
+                void_indices = where(inside & is_void)[0]
                 # the current method is fine - this can be added later if needed
             # now that everything is updated, we need to stream this data into an animation file
             if t >= tspan[current_time_indicator]: 
@@ -172,10 +173,10 @@ def run_simulation(params):
     return t, states
 
 # these functions below are no longer in use
-def RKF45_step(t,initial,dt,err_tol=1e-3):
+"""def RKF45_step(t,initial,dt,err_tol=1e-3):
 
     # Change in positions
-        initial_copy = np.copy(initial) # as to not mutate the original array
+        initial_copy = copy(initial) # as to not mutate the original array
         k1 = dt*integrable_calcualte_forces(t,initial_copy)
         k2 = dt*integrable_calcualte_forces(t+0.25*dt, initial_copy + 0.25*k1)
         k3 = dt*integrable_calcualte_forces(t+(3./8.)*dt, initial_copy+(3./32.)*k1 + (9./32.)*k2)
@@ -187,14 +188,14 @@ def RKF45_step(t,initial,dt,err_tol=1e-3):
         rk5 =  initial_copy + (16./135.)*k1 + (6656./12825.)*k3 + (28561./56430.)*k4 - (9./50.)*k5 + (2./55.)*k6 # rk5 approx
 
         scale = 1.#atol + rtol * np.maximum(np.abs(rk4), np.abs(rk5))
-        approx_err = np.linalg.norm((rk5 - rk4) / scale) / np.sqrt(len(initial)) # should help temper the size of the error 
+        approx_err = linalg.norm((rk5 - rk4) / scale) / sqrt(len(initial)) # should help temper the size of the error 
         ideal_step_size = dt*(err_tol*dt/approx_err/2)**(0.25) * 0.9 # 0.9 is a safetey factor; this sets the ideal time step for the next iteration
 
         return rk5, approx_err, ideal_step_size
 
 def velocity_verlet_step(t,initial,n,time_step):
     # Change in positions
-        initial_copy = np.copy(initial)
+        initial_copy = copy(initial)
         force_vec = integrable_calcualte_forces(t,initial)
         initial_copy[0:n] += initial[n:(2*n)]*time_step + 0.5 * time_step**2 * force_vec[n:(2*n)] # change in x coordinate
         initial_copy[(2*n):(3*n)] += initial[(3*n):(4*n)]*time_step + 0.5 * time_step**2 * force_vec[(3*n):(4*n)] # change in y coordinate
@@ -206,4 +207,4 @@ def velocity_verlet_step(t,initial,n,time_step):
         initial_copy[(3*n):(4*n)] += 0.5*(force_vec[(3*n):(4*n)] + force_vec_next[(3*n):(4*n)] )*time_step  # change in y velocity
         initial_copy[4*n] += time_step * force_vec[4*n] # tempurature evolution
 
-        return initial_copy
+        return initial_copy"""

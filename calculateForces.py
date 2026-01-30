@@ -1,10 +1,9 @@
-import numpy as np
+from numpy import sqrt, column_stack, zeros, ones, where, array, add, maximum, divide, copy, zeros_like, pi
+from numpy.random import randint
 from defineParameters import params
 #from time import sleep # for debugging
 from viscosity_field import make_globular_indicator
 from scipy.spatial import cKDTree # makes spatial searches much faster
-import jax
-import jax.numpy as jnp
 
 
 ind_func = make_globular_indicator() # get a function to check viscocity state; index function of the void set
@@ -37,8 +36,8 @@ def calculate_forces(t, states, params):
 
     # Initialize global direction vectors if empty
     if rand_dirs_global_x is None:
-        rand_dirs_global_x = 2 * np.random.randint(0, 2, n) - 1 # random numbers from 
-        rand_dirs_global_y = 2 * np.random.randint(0, 2, n) - 1
+        rand_dirs_global_x = 2 * randint(0, 2, n) - 1 # random numbers from 
+        rand_dirs_global_y = 2 * randint(0, 2, n) - 1
 
     # ------------------------
     # Unpack state variables
@@ -50,7 +49,7 @@ def calculate_forces(t, states, params):
     T = states[4*n] # temperature
 
     # Turn the points into a KDTree for easy spatial search
-    coords = np.column_stack((x_p, y_p))
+    coords = column_stack((x_p, y_p))
 
     Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
 
@@ -70,8 +69,8 @@ def calculate_forces(t, states, params):
     
     Fr_x, Fr_y = residual_force(n, x_p, y_p, params["L_x"], params["L_y"])
 
-    Fc_x = np.zeros(n) # initialize the contact forces
-    Fc_y = np.zeros(n)
+    Fc_x = zeros(n) # initialize the contact forces
+    Fc_y = zeros(n)
 
     # If the particle has reached the end, set the velocity to zero
     fin_array = finishing_array(x_p, params["L_x"], params["fin"])
@@ -84,7 +83,7 @@ def calculate_forces(t, states, params):
     # Solve for dx/dt
     # ------------------------
     # evolution in x direction
-    dxdt = np.zeros(4 * n + 1) # initialize the array of states vector derivatives (x here is not the x-direction, but the entire state vector)
+    dxdt = zeros(4 * n + 1) # initialize the array of states vector derivatives (x here is not the x-direction, but the entire state vector)
     dxdt[0:n] = x_v * fin_array
     dxdt[n:(2*n)] = (forces_x / eta) * fin_array
     #evolution in y direction
@@ -101,19 +100,19 @@ def calculate_forces(t, states, params):
 def distances(x1, x2, y1, y2):
     dx = x1 - x2
     dy = y1 - y2
-    d = np.sqrt(dx ** 2 + dy ** 2)
+    d = sqrt(dx ** 2 + dy ** 2)
     return d, dx, dy
 
 def distance(x1, x2, y1, y2):
     dx = x1 - x2
     dy = y1 - y2
-    d = np.sqrt(dx ** 2 + dy ** 2)
+    d = sqrt(dx ** 2 + dy ** 2)
     return d
 
 
 def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
     # Initialize force to zero
-    Fa_x = np.zeros(n)
+    Fa_x = zeros(n)
 
     x_p = coords[:,0]
     y_p = coords[:,1]
@@ -141,30 +140,30 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
         force_val = alpha * Volt / (0.5 * Lx)
 
         # Identify indices of particles in a void
-        void_indices = np.where(inside & is_void)[0] # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
+        void_indices =  where(inside & is_void)[0] # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
         
         # query_ball_point finds all particles within radius 'r' for each void particle
         neighbors_list = kdTree.query_ball_point(coords[void_indices], r) # this returns an array of lists. The list in the ith element of the array contains the indicies of the points within a distance r of the ith particle
         
         for i, void_idx in enumerate(void_indices):
             # neighbors_list[i] contains indices of all particles within radius r
-            potential_neighbors = np.array(neighbors_list[i]) # neigbors of the ith particle
+            potential_neighbors =  array(neighbors_list[i]) # neigbors of the ith particle
             
             # only care about neighbors that are strictly behind (smaller x). also exclude the particle itself (distance 0)
             xi = x_p[void_idx]
             is_behind = x_p[potential_neighbors] < xi
             
-            if np.any(is_behind):
+            if  any(is_behind):
                 Fa_x[void_idx] = force_val[void_idx]
                     
         return Fa_x * 1e15 # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
 
 def drag_force(x, y, x_v, y_v, eta, Cd):
 
-    #eta_prime = np.array([ eta if ind_func(x[i],y[i]) == 1 else eta*params['viscosity_multiplier'] for i in range(len(x_v))])
+    #eta_prime =  array([ eta if ind_func(x[i],y[i]) == 1 else eta*params['viscosity_multiplier'] for i in range(len(x_v))])
     # the above can be vectorized for increased efficiency
     VoidMask = (ind_func(x,y) == 1)
-    eta_prime = np.where(VoidMask, eta, eta * params['viscosity_multiplier']) # results in the same vector as before, but much quicker
+    eta_prime =  where(VoidMask, eta, eta * params['viscosity_multiplier']) # results in the same vector as before, but much quicker
 
     Fd_x = -eta_prime * Cd * x_v
     Fd_y = -eta_prime * Cd * y_v
@@ -206,7 +205,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     dx = x[j] - x[i] # pair x-distances; dx points from i to j
     dy = y[j] - y[i] # pair y-distnaces; points from i to j
     dist2 = dx**2 + dy**2 # list of pair y-distances squaresd
-    dist = np.sqrt(dist2) # list of pair y-distances
+    dist =  sqrt(dist2) # list of pair y-distances
 
     mask = (dist < 2.001 * R)  # logical index of particles that are less than two partilce radii apart; we only compute vdw force for *not* these to prevent collisions; we choose 2.001 to prevent the stiffness of the force to cuase particles to "slingshot" about
 
@@ -215,7 +214,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     h = dist - 2. * R # Surface-to-surface separation
 
     h_min = 1e-10 * R
-    h = np.maximum(h, h_min) # Prevent numerical blow-up (we will be dividing by a power of h later on)
+    h =  maximum(h, h_min) # Prevent numerical blow-up (we will be dividing by a power of h later on)
 
     # Hamaker vdW force magnitude 
     d = h+2.*R
@@ -234,14 +233,14 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     Fy_vdW[mask] = 0.
 
     # initialize force vectors forces
-    f_vdW_x = np.zeros(len(x))
-    f_vdW_y = np.zeros(len(y))
+    f_vdW_x =  zeros(len(x))
+    f_vdW_y =  zeros(len(y))
 
     # Add force to i, subtract (Newton's 3rd) from j
-    np.add.at(f_vdW_x, i,  Fx_vdW)
-    np.add.at(f_vdW_x, j, -Fx_vdW) # the force on j is opposite the force on i
-    np.add.at(f_vdW_y, i,  Fy_vdW)
-    np.add.at(f_vdW_y, j, -Fy_vdW)
+    add.at(f_vdW_x, i,  Fx_vdW)
+    add.at(f_vdW_x, j, -Fx_vdW) # the force on j is opposite the force on i
+    add.at(f_vdW_y, i,  Fy_vdW)
+    add.at(f_vdW_y, j, -Fy_vdW)
         
     #return f_vdW_x, f_vdW_y
     # coulomb force
@@ -252,20 +251,20 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     q1 = q[i]
     q2 = q[j]
 
-    f_c_x  = np.zeros_like(f_vdW_x)
-    f_c_y = np.copy(f_c_x)
+    f_c_x  =  zeros_like(f_vdW_x)
+    f_c_y =  copy(f_c_x)
 
-    f_coulomb_mag = -np.divide(q1*q2 , (eps0*eps_r * h**2 * 4. * np.pi)) # this should be repulsive so we add the minus sign
+    f_coulomb_mag = - divide(q1*q2 , (eps0*eps_r * h**2 * 4. *  pi)) # this should be repulsive so we add the minus sign
 
     F_c_x = f_coulomb_mag * ex # ex and ey already contain the force direciton.
     F_c_y = f_coulomb_mag * ey 
     F_c_x[mask] = 0. # zero the forces when the distances are too small
     F_c_y[mask] = 0.
 
-    np.add.at(f_c_x, i,  F_c_x)
-    np.add.at(f_c_x, j, -F_c_x) # the force on j is opposite the force on i
-    np.add.at(f_c_y, i,  F_c_y)
-    np.add.at(f_c_y, j, -F_c_y)
+    add.at(f_c_x, i,  F_c_x)
+    add.at(f_c_x, j, -F_c_x) # the force on j is opposite the force on i
+    add.at(f_c_y, i,  F_c_y)
+    add.at(f_c_y, j, -F_c_y)
     
     return f_c_x + f_vdW_x, f_c_y + f_vdW_y
 
@@ -280,12 +279,10 @@ def pinning_force(n, x_p, y_p, w_pin, x_pin, y_pin, R_pin, Lx):
 
 
 def temperature_fluctuations(n, eta, T_coeff, T, rand_x, rand_y):
-    noise_scale = jnp.sqrt(eta * T_coeff * T)
+    noise_scale =  sqrt(eta * T_coeff * T)
     Ft_x = rand_x * noise_scale
     Ft_y = rand_y * noise_scale
     return Ft_x/20., Ft_y/20. # scaled so that these forces are not dominant - they should be small relative to the other forces
-
-temperature_fluctuations = jax.jit(temperature_fluctuations)
 
 # # ------------------------
 # # TODO: Residual Force

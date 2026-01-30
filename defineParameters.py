@@ -43,7 +43,7 @@ params = { # create a dictionary to hold parameters
     # --------------------------------
     
     "n" : 350, #500 # Number of particles
-    "simulation_length" : 0.6, #6, # in seconds
+    "simulation_length" : 1.5, #6, # in seconds
 
     #--------------------------------
     # Initial position box and material size
