@@ -1,4 +1,4 @@
-from numpy import random, zeros, meshgrid, linspace, copy, concatenate, where#, sqrt
+from numpy import random, zeros, meshgrid, linspace, concatenate, where
 #from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
@@ -138,13 +138,13 @@ def run_simulation(params):
             solver.step() # one step
             t = solver.t # current time
             y = solver.y # current state vector
-            if not params['structual_in_force']: # zero out forward momentum in the voids if no particles are behind - forward movement cannot be supported in the void without existing protrusion
+            '''if not params['structual_in_force']: # zero out forward momentum in the voids if no particles are behind - forward movement cannot be supported in the void without existing protrusion
                 x_p = y[0:n]
                 y_p = y[2*n:3*n]
                 inside = (x_p < Lx)
                 is_void = (ind_func(x_p, y_p) == 1)[0]
                 void_indices = where(inside & is_void)[0]
-                # the current method is fine - this can be added later if needed
+                # The idea is that particles should not be able to move forward in a void if there are no particles behind them - to mimmic this we zero the momenta here'''
             # now that everything is updated, we need to stream this data into an animation file
             if t >= tspan[current_time_indicator]: 
                 current_time_indicator += 1
