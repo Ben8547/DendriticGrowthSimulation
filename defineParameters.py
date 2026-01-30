@@ -42,7 +42,7 @@ params = { # create a dictionary to hold parameters
     # Simulation Length and Particle Count
     # --------------------------------
     
-    "n" : 400, #500 # Number of particles
+    "n" : 350, #500 # Number of particles
     "simulation_length" : 0.6, #6, # in seconds
 
     #--------------------------------
@@ -104,7 +104,7 @@ params["elec_transfer_radius"] = params["L_x"]/150. # we ahve the atomic radius 
 
 # simulation parameters
 params['dt'] = params["simulation_length"]/100.  # Time step for simulation; originally 2000
-params["tspan"] = np.arange(0, params["simulation_length"], params["dt"]) # Time span for simulation output
+params["tspan"] = np.linspace(0, params["simulation_length"], 500) # Time span for simulation output
 
 # material and electrode dimensions
 params["electrode_width"] = params["L_x"] / 2 # Width of electrodes on material
@@ -126,7 +126,7 @@ params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from 
 params['alpha'] = 5e-11 +  rand(params['n']) * 5e-11  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
 params['eps_0'] = 8.854e-12
 params["Average_particle_Radius"] = params["elec_transfer_radius"]/2. # since the particles must touch for electric transfer
-params["Hamaker Constant"] = 1.5 #1. # van der Waals force constant - depends upon material
+params["Hamaker Constant"] = 2. #1. # van der Waals force constant - depends upon material
 
 #--------------------------------
 # Drag Force Parameters

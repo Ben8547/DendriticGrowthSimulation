@@ -1,7 +1,7 @@
 from calculateForces import vdW_Force_AND_Dipole_Force
 from scipy.integrate import RK45, Radau, BDF
 from defineParameters import params
-from numpy import array, column_stack, append,linspace, random,zeros_like, copy
+from numpy import array, column_stack, append,linspace, random, zeros_like, copy
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 from matplotlib.animation import FFMpegWriter 
@@ -13,8 +13,8 @@ R = 0.002
 #x = array([0.,6.*R,8.*R])
 #y = array([0.,6.*R,-R])
 random.seed(10)
-x = 10. * (random.random(50)-0.5) * R
-y = 10. * (random.random(50)-0.5) * R
+x = 10. * (random.random(2)-0.5) * R
+y = 10. * (random.random(2)-0.5) * R
 vx = zeros_like(x)
 vy = copy(vx)
 

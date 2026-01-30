@@ -208,7 +208,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     dist2 = dx**2 + dy**2 # list of pair y-distances squaresd
     dist = np.sqrt(dist2) # list of pair y-distances
 
-    mask = (dist < 2.001 * R)  # logical index of particles that are less than two partilce radii apart; we only compute vdw force for *not* these to prevent collisions
+    mask = (dist < 2.001 * R)  # logical index of particles that are less than two partilce radii apart; we only compute vdw force for *not* these to prevent collisions; we choose 2.001 to prevent the stiffness of the force to cuase particles to "slingshot" about
 
     # van der Waals Calculation
     
