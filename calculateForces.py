@@ -1,4 +1,4 @@
-from numpy import sqrt, column_stack, zeros, ones, where, array, add, maximum, divide, copy, zeros_like, pi
+from numpy import sqrt, column_stack, zeros, where, array, add, maximum, divide, copy, zeros_like, pi
 from numpy.random import randint
 from defineParameters import params
 #from time import sleep # for debugging
