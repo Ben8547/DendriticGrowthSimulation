@@ -282,7 +282,7 @@ def temperature_fluctuations(n, eta, T_coeff, T, rand_x, rand_y):
     noise_scale =  sqrt(eta * T_coeff * T)
     Ft_x = rand_x * noise_scale
     Ft_y = rand_y * noise_scale
-    return Ft_x/20., Ft_y/20. # scaled so that these forces are not dominant - they should be small relative to the other forces
+    return Ft_x/60., Ft_y/60. # scaled so that these forces are not dominant - they should be small relative to the other forces
 
 # # ------------------------
 # # TODO: Residual Force
