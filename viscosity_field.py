@@ -69,7 +69,7 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
         pts = jnp.stack([x1, y1], axis=-1)
         A = amplitudes[:, jnp.newaxis, jnp.newaxis]
         s = sigmas[:, jnp.newaxis, jnp.newaxis]
-        cent = centers[:, jnp.newaxis, jnp.newaxis, :]
+        cent = centers[:, None, None, :]
         diff = pts - cent 
         r2 = jnp.sum(diff**2, axis=-1)
         phi_all = A * jnp.exp(-r2 / (2 * s**2))
@@ -89,17 +89,23 @@ def visc_dense_curve(x,a=2.5):
     return 1 + a - (a/ (1+(x/params["L_x"]-0.5)**2) )
 
 
-from numpy import zeros_like
+#from numpy import zeros_like
 def viscocity_gradient(x,y,indicator):
     '''out = jnp.zeros_like(x)
     out.at[indicator(x,y)==0].set(params["eta"] * desired_beta(x))
     out.at[indicator(x,y)!=0].set(params["eta"] * desired_beta(x))
     return out'''
-    out = zeros_like(x)
-    out_void_mask = (indicator(x,y)==0)[0]==0
+    '''out = zeros_like(x)
+    out_void_mask = (indicator(x,y)==0)
     out[out_void_mask] = (params["eta"] * visc_dense_curve(x[out_void_mask]))
     out[~out_void_mask] = params["eta"]
-    return out
+    return out'''
+    mask = indicator(x, y)  # works for both grid and particles
+
+    eta_dense = params["eta"] * visc_dense_curve(x)
+    return jnp.where(mask, params["eta"], eta_dense)
+
+#viscocity_gradient = jax.jit(viscocity_gradient)
 
 
 #viscocity_gradient = jax.jit(viscocity_gradient)
@@ -127,6 +133,11 @@ if __name__ == "__main__": # view the viscosity map if the script is run directl
 
     #print(ind_func([0,0.2*params["L_x"]],[0,0.2*params["L_x"]]))
 
+    plt.show()
+
+    Z = viscocity_gradient(X,Y,ind_func)
+    plt.imshow(Z)
+    plt.colorbar()
     plt.show()
 
     if False: # plot beta dist
