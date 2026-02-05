@@ -89,7 +89,6 @@ def run_simulation(params):
         color=(1.0, 0.8431, 0.0),
         alpha=0.3,
     )
-
     x = linspace(0.,params["L_x"],1000)
     y = linspace(-params["L_y"]/2.,params["L_y"]/2.,1000)
 
@@ -98,7 +97,7 @@ def run_simulation(params):
     Z = viscocity_gradient(X,Y,ind_func) #ind_func(X,Y)
     pcm = ax1.pcolormesh(X, Y, Z, cmap="pink", shading="auto", alpha=0.3)
 
-    ax1.imshow(Z)
+    #ax1.imshow(Z)
     plt.colorbar(pcm, ax=ax1)
 
     particles, = ax1.plot(initial[0:n], initial[2*n : 3*n], "b.", markersize=2) # this is the artist to be updated
