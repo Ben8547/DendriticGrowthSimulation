@@ -73,10 +73,12 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
 
     return indicator
 
-def beta_curve(x,alpha,beta):
-    return x**(alpha-1) * (1-x)**(beta-1) * gamma(alpha+beta) / gamma(alpha) / gamma(beta) if (x < 0.9) and (x > 0.1) else 0.1**(alpha-1) * (0.9)**(beta-1) * gamma(alpha+beta) / gamma(alpha) / gamma(beta)
+'''def beta_curve(x,alpha,beta):
+    return x**(alpha-1) * (1-x)**(beta-1) * gamma(alpha+beta) / gamma(alpha) / gamma(beta)
 
-desired_beta = lambda x: params["viscosity_multiplier"] * beta_curve(x/params['L_x'],0.5,0.5) # inverse bell curve - low in middle - high at edges
+desired_beta = lambda x: params["viscosity_multiplier"] * beta_curve(x/params['L_x'],0.5,0.5) # inverse bell curve - low in middle - high at edges''' #This didn't work because it blew up at the edges
+def visc_dense_curve(x,a=2.5):
+    return 1 + a - (a/ (1+(x/params["L_x"]-0.5)**2) )
 
 
 from numpy import zeros_like
@@ -87,7 +89,7 @@ def viscocity_gradient(x,y,indicator):
     return out'''
     out = zeros_like(x)
     out_void_mask = (indicator(x,y)==0)[0]==0
-    out[out_void_mask] = (params["eta"] * desired_beta(x[out_void_mask]))
+    out[out_void_mask] = (params["eta"] * visc_dense_curve(x[out_void_mask]))
     out[~out_void_mask] = params["eta"]
     return out
 
