@@ -1,9 +1,9 @@
 from numpy import sqrt, column_stack, zeros, where, array, add, maximum, divide, copy, zeros_like, pi, any
-from numpy import max as npmax
+#from numpy import max as npmax
 from numpy.random import randint
 from defineParameters import params
 #from time import sleep # for debugging
-from viscosity_field import make_globular_indicator
+from viscosity_field import make_globular_indicator, viscocity_gradient
 from scipy.spatial import cKDTree # makes spatial searches much faster
 
 
@@ -207,8 +207,10 @@ def drag_force(x, y, x_v, y_v, eta, Cd):
 
     #eta_prime =  array([ eta if ind_func(x[i],y[i]) == 1 else eta*params['viscosity_multiplier'] for i in range(len(x_v))])
     # the above can be vectorized for increased efficiency
-    VoidMask = (ind_func(x,y) == 1)
-    eta_prime =  where(VoidMask[0], eta, eta * params['viscosity_multiplier']) # results in the same vector as before, but much quicker
+    #VoidMask = (ind_func(x,y) == 1)
+    #eta_prime =  where(VoidMask[0], eta, eta * params['viscosity_multiplier']) # results in the same vector as before, but much quicker
+
+    eta_prime = viscocity_gradient(x,y,ind_func)
 
     Fd_x = -eta_prime * Cd * x_v
     Fd_y = -eta_prime * Cd * y_v

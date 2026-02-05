@@ -5,6 +5,7 @@ from matplotlib.animation import PillowWriter, FuncAnimation
 #import imageio
 
 from calculateForces import integrable_calcualte_forces, ind_func
+from viscosity_field import viscocity_gradient
 
 
 def run_simulation(params):
@@ -94,7 +95,7 @@ def run_simulation(params):
 
     X, Y = meshgrid(x,y)
 
-    Z = ind_func(X,Y)
+    Z = viscocity_gradient(X,Y,ind_func) #ind_func(X,Y)
     pcm = ax1.pcolormesh(X, Y, Z, cmap="pink", shading="auto", alpha=0.3)
 
     ax1.imshow(Z)

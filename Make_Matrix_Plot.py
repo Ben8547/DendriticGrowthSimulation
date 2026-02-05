@@ -1,21 +1,15 @@
-
-from defineParameters import params
-from runSimulation import run_simulation
+from launchSimulation import run
 from numpy import array
 
 
-matrix_Ham = array([]) # 3
-matrix_viscMult = array([]) # 3
+matrix_Ham = array([float(2**(2*i)) for i in range (3)]) # 3
+matrix_viscMult = array([2.5, 8, 16]) # 3
 
 for i in range(3):
-    with open("Hamaker.txt",'w') as Ham:
+    with open("Hamaker.txt",'w') as Ham: # Change paramaters
             Ham.write(matrix_Ham[i])
     for j in range(3):
-        with open("Visc.txt",'w') as Visc:
+        with open("Visc.txt",'w') as Visc: # Change paramaters
             Visc.write(matrix_viscMult[j])
-        # Change paramaters
         # Run simulation
-        t, states = run_simulation(params)
-        print(f"Simulation finished successfully")
-        print(f"Final time: {t:.3f}")
-        print(f"State vector shape: {states.shape}")
+        run()

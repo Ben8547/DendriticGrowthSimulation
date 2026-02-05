@@ -6,10 +6,10 @@ These fractures are then able to allow freer passage of conductive nanoparticles
 The way Sam set that up did not seem physical nor was it affecting any visible change in the nanoparticle and current dynamics.
 """
 
-from numpy import asarray, zeros_like, exp, mean, column_stack
 from numpy.random import default_rng
 from defineParameters import params
 #from scipy.stats import beta # beta distrobution to push the voids towards the electrodes
+from scipy.special import gamma
 import jax
 import jax.numpy as jnp
 
@@ -47,7 +47,7 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
     amplitudes = jnp.copy(rng.uniform(0.8, 1.2, size=n_regions))
 
     # Threshold chosen so regions remain disconnected and globular
-    threshold = 0.5 * mean(amplitudes)
+    threshold = 0.5 * jnp.mean(amplitudes)
 
     def indicator(x, y):
         x1 = jnp.copy(x)
@@ -67,11 +67,22 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
         # Sum across the N dimension (the individual blobs)
         phi = jnp.sum(phi_all, axis=0)
 
-        return (phi > threshold) # returns the Boolean value
+        return (phi > threshold) # returns the Boolean value; True (1) at element i if point in element i is in the region
     
     indicator = jax.jit(indicator) # turn function into a jax function - should speed up signifigantly
 
     return indicator
+
+def beta_curve(x,alpha,beta):
+    return x**(alpha-1) * (1-x)**(beta-1) * gamma(alpha+beta) / gamma(alpha) / gamma(beta)
+
+desired_beta = lambda x: params["viscosity_multiplier"] * beta_curve(x/params['L_x'],0.5,0.5) # inverse bell curve - low in middle - high at edges
+
+def viscocity_gradient(x,y,indicator):
+    out = jnp.zeros_like(x)
+    out[indicator(x,y)==0] = params["eta"] * desired_beta(x,y)
+    out[indicator(x,y)!=0] = params["eta"]
+    return 
 
 
 
