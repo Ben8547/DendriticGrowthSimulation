@@ -80,9 +80,11 @@ desired_beta = lambda x: params["viscosity_multiplier"] * beta_curve(x/params['L
 
 def viscocity_gradient(x,y,indicator):
     out = jnp.zeros_like(x)
-    out[indicator(x,y)==0] = params["eta"] * desired_beta(x)
-    out[indicator(x,y)!=0] = params["eta"]
-    return 
+    out.at[indicator(x,y)==0].set(params["eta"] * desired_beta(x))
+    out.at[indicator(x,y)!=0].set(params["eta"] * desired_beta(x))
+    return out
+
+viscocity_gradient = jax.jit(viscocity_gradient)
 
 
 
