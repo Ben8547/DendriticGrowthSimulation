@@ -8,10 +8,12 @@ matrix_Ham = array([]) # 3
 matrix_viscMult = array([]) # 3
 
 for i in range(3):
+    with open("Hamaker.txt",'w') as Ham:
+            Ham.write(matrix_Ham[i])
     for j in range(3):
+        with open("Visc.txt",'w') as Visc:
+            Visc.write(matrix_viscMult[j])
         # Change paramaters
-        params["Hamaker Constant"] = matrix_Ham[i]
-        params["viscosity_multiplier"] = matrix_viscMult[j]
         # Run simulation
         t, states = run_simulation(params)
         print(f"Simulation finished successfully")

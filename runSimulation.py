@@ -28,7 +28,6 @@ def run_simulation(params):
     tspan = params["tspan"]
 
     Lx = params["L_x"]
-    Ly = params["L_y"]
     electrode_width = params["electrode_width"]
     electrode_height = params["electrode_height"]
 
