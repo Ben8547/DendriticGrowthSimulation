@@ -78,13 +78,20 @@ def beta_curve(x,alpha,beta):
 
 desired_beta = lambda x: params["viscosity_multiplier"] * beta_curve(x/params['L_x'],0.5,0.5) # inverse bell curve - low in middle - high at edges
 
+
+from numpy import zeros_like
 def viscocity_gradient(x,y,indicator):
-    out = jnp.zeros_like(x)
+    '''out = jnp.zeros_like(x)
     out.at[indicator(x,y)==0].set(params["eta"] * desired_beta(x))
     out.at[indicator(x,y)!=0].set(params["eta"] * desired_beta(x))
+    return out'''
+    out = zeros_like(x)
+    out[indicator(x,y)==0] = (params["eta"] * desired_beta(x))
+    out[indicator(x,y)!=0] = (params["eta"] * desired_beta(x))
     return out
 
-viscocity_gradient = jax.jit(viscocity_gradient)
+
+#viscocity_gradient = jax.jit(viscocity_gradient)
 
 
 
