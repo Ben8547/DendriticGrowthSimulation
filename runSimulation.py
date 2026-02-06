@@ -162,7 +162,7 @@ def run_simulation(params):
                     params["lambda"], params["Rt"], y[-1], params['num_e']#params["steps"], params["num_e"]
                     ))
                 current_graph.set_data(times,current_histroy)
-                ax2.set_ylim(max(current_histroy))
+                ax2.set_ylim(0.,max(current_histroy))
                 writer.grab_frame() # write the most recent frame to the file
                 print(f"time: {t}, current {current_histroy[-1]}") # debug tool
         states = solver.y
