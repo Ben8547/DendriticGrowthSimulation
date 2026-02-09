@@ -87,7 +87,7 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     # ------------------------
     Fa_x = applied_force(n, coords, Tree, params["alpha"], Volt, params["L_x"],t)
     F_vdWx, F_vdWy = vdW_Force_AND_Dipole_Force(coords,Tree,A=Hamaker)
-    Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["eta"], params["Cd"],Visc)
+    Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["Cd"], Visc)
     FI_x = interfacial_force(n, x_p, y_p, params["wI"], params["RI"], params["L_x"])
     Fp_x, Fp_y = pinning_force(
         n, x_p, y_p, params["w_pin"], params["x_pin"], params["y_pin"], params["R_pin"], params["L_x"]
@@ -202,7 +202,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
                     
         return Fa_x * 1e15 # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
 
-def drag_force(x, y, x_v, y_v, eta, Cd,Visc_mult):
+def drag_force(x, y, x_v, y_v, Cd,Visc_mult):
 
     #eta_prime =  array([ eta if ind_func(x[i],y[i]) == 1 else eta*params['viscosity_multiplier'] for i in range(len(x_v))])
     # the above can be vectorized for increased efficiency

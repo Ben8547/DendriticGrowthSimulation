@@ -97,7 +97,7 @@ def run_simulation(params, Hamaker, Visc):
 
     X, Y = meshgrid(x,y)
 
-    Z = viscocity_gradient(X,Y,ind_func) #ind_func(X,Y)
+    Z = viscocity_gradient(X,Y,ind_func,Visc) #ind_func(X,Y)
     #pcm = ax1.pcolormesh(X, Y, Z, cmap="pink", shading="auto", alpha=0.3)
     pcm = ax1.pcolormesh(x, y, Z, cmap="pink", shading="auto", alpha=0.3)
 
