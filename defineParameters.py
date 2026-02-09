@@ -166,7 +166,7 @@ if not params['is_Voltage_constant']:
 # File Settings
 #--------------------------------
 
-params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{params['viscosity_multiplier']}_vdW-{params['Hamaker Constant']}_Ly-{params["L_y"]}.gif"
+params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{params['viscosity_multiplier']}_vdW-{params['Hamaker Constant']}_Ly-{params["L_y"]}"
 
 params["seed"] = s
 

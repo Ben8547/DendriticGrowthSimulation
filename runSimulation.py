@@ -2,13 +2,14 @@ from numpy import random, zeros, meshgrid, linspace, concatenate, where
 #from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
+from defineParameters import params
 #import imageio
 
-from calculateForces import integrable_calcualte_forces, ind_func
+from calculateForces import calculate_forces, ind_func
 from viscosity_field import viscocity_gradient
 
 
-def run_simulation(params):
+def run_simulation(params, Hamaker, Visc):
     """
     Translated from MATLAB runSimulation.m
     Runs the full dendritic growth simulation with visualization and GIF output.
@@ -18,6 +19,8 @@ def run_simulation(params):
     from calculateForces import I_saved, t_saved
     I_saved.clear()
     t_saved.clear()'''
+
+    integrable_calcualte_forces = lambda t,x: calculate_forces(t,x,params,Hamaker,Visc) # this function only takes t and x so it can be used by an integrator
 
     random.seed(1)
 
@@ -121,7 +124,7 @@ def run_simulation(params):
     current_time_indicator = 1 # the next time at which to capture the animation frame; index of the tspan array
     from scipy.integrate import RK45, BDF, Radau # various integrators to try
 
-    with writer.saving(fig, f"Sim_Out_Ham={params["Hamaker Constant"]}-DensityMult={params["viscosity_multiplier"]}.mp4", dpi=100): # this enables streaming the simulation data to a file concurrent with the simualtion - enables an approximate 5x speed up
+    with writer.saving(fig, f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{Visc}_vdW-{Hamaker}_Ly-{params["L_y"]}"+'.mp4', dpi=50): # this enables streaming the simulation data to a file concurrent with the simualtion - enables an approximate 5x speed up
         # use scipy integrator
         solver = RK45(
         fun=integrable_calcualte_forces,

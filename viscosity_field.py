@@ -90,7 +90,7 @@ def visc_dense_curve(x,a=2.5):
 
 
 #from numpy import zeros_like
-def viscocity_gradient(x,y,indicator):
+def viscocity_gradient(x,y,indicator,Visc_mult):
     '''out = jnp.zeros_like(x)
     out.at[indicator(x,y)==0].set(params["eta"] * desired_beta(x))
     out.at[indicator(x,y)!=0].set(params["eta"] * desired_beta(x))
@@ -102,7 +102,7 @@ def viscocity_gradient(x,y,indicator):
     return out'''
     mask = indicator(x, y)  # works for both grid and particles
 
-    eta_dense = params["eta"] * visc_dense_curve(x)
+    eta_dense = params["eta"] * visc_dense_curve(x) * Visc_mult
     return jnp.where(mask, params["eta"], eta_dense)
 
 #viscocity_gradient = jax.jit(viscocity_gradient)
