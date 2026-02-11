@@ -102,7 +102,8 @@ def run_simulation(params, Hamaker, Visc):
     pcm = ax1.pcolormesh(x, y, Z, cmap="pink", shading="auto", alpha=0.3)
 
     #ax1.imshow(Z)
-    plt.colorbar(pcm, ax=ax1)
+    plt.colorbar(pcm, ax=ax1,)
+    pcm.set_clim(vmin=0.,vmax=35.)
 
     particles, = ax1.plot(initial[0:n], initial[2*n : 3*n], "b.", markersize=2) # this is the artist to be updated
 
