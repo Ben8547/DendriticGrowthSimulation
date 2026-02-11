@@ -127,6 +127,7 @@ params['alpha'] = 5e-11 +  rand(params['n']) * 5e-11  #0.5e5 * np.ones(params['n
 params['eps_0'] = 8.854e-12
 params["Average_particle_Radius"] = params["elec_transfer_radius"]/2. # since the particles must touch for electric transfer
 params["Hamaker Constant"] = np.genfromtxt("Hamaker.txt",float) #6. #1. # van der Waals force constant - depends upon material
+params['Hamaker_Sample_Size'] = 10
 
 #--------------------------------
 # Drag Force Parameters

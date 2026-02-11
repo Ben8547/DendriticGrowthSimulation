@@ -264,8 +264,8 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
 
     # Hamaker vdW force magnitude 
     d = h+2.*R
-    F_vdW_mag =  A/6 * ( (4.*R**2.*d)/(d**2. -4.*R**2.)**2 + (4.*R**2. * d)/(d**4.) + (2.*d)/(d**2.-4.*R**2.) - 2./(d)  ) #A * R / (12.0 * h**2) # Derjaguin approximation - h << R
-
+    #F_vdW_mag =  A/6 * ( (4.*R**2.*d)/(d**2. -4.*R**2.)**2 + (4.*R**2. * d)/(d**4.) + (2.*d)/(d**2.-4.*R**2.) - 2./(d)  ) #A * R / (12.0 * h**2) # Derjaguin approximation - h << R
+    F_vdW_mag =  A/6 * ( (4.*R**2.*d)/(d**2. -4.*R**2.)**2 + (4.*R**2. * d)/(d**4.) + (2.*d)/(d**2.-4.*R**2.) - 2./(d)  ) # Taylor expansion of the force - prevents it from blowing up at zero - taking right derivatives only - only these matter because we use distance
     # Unit vectors; need to project the force onto the vectro in between the two particles
     ex = dx / dist
     ey = dy / dist # since dy is signed this encode force direction as well; points from i to j
