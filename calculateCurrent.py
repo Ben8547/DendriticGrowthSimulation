@@ -1,7 +1,7 @@
 from defineParameters import params
 from numpy import exp, ones, sum, copy, max, array, argmin, sqrt, argsort, vstack, zeros, float32, searchsorted #tile, full, isnan, sqrt, min, nan, newaxis
 from numpy.random import rand
-from numba import njit
+#from numba import njit
 
 #from getNextIndex import get_next_index
 
@@ -30,7 +30,7 @@ def boltz_fact_dist(d,Volt, T, L_x):
 # the above energies assume a paralell plate capacitor of infinte area. This is hopefully a decent approximation
 
 
-@njit # for speed
+#@njit # for speed
 def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Monte-Carlo method
     # What this function does:
     # 0) If voltage is 0, return 0 since that will be the end result anyway
