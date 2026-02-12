@@ -98,8 +98,7 @@ params = { # create a dictionary to hold parameters
 
     # Lenard-Jones
 
-    "LJ-Well_depth" : 1.,
-    "LJ - Sigma" : np.genfromtxt("LJ_sigma.txt",float)
+    "LJ-Well_depth" : np.genfromtxt("Hamaker.txt",float)
 
 }
 
@@ -148,6 +147,8 @@ params["Cd"] = 50. # 1.8e4 # Drag Coefficient
 
 params['wI'] = 2e4 # Interfacial potential amplitude only with clusters
 params['RI'] = 25 #Interfacial potential distance only with clusters
+
+params["LJ - Sigma"] = 2.**(5./6.) * params['Average_particle_Radius'] # set ideal distance to 2R.
 
 #--------------------------------
 # Current Calculation Parameters

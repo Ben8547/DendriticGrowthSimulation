@@ -336,9 +336,10 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     dist2 = dx**2 + dy**2 # list of pair y-distances squaresd
     dist =  sqrt(dist2) # list of pair y-distances
 
-    mask = (dist < 2. * R)  # logical index of particles that are less than two partilce radii apart; we only compute vdw force for *not* these to prevent collisions; we choose 2.001 to prevent the stiffness of the force to cuase particles to "slingshot" about
-
-    F_vdW_mag = 48.*params["LJ-Well_depth"] * ( A**12 / dist**13 -  A**6 / dist**7) #Lenard-Jones Force 
+    min_dist = 0.001*R
+    mask = (dist < min_dist)  # logical index of particles that are getting close to the asymptote - turn these off for safety
+    
+    F_vdW_mag = 48.*A * ( params["LJ - Sigma"]**12 / dist**13 -  params["LJ - Sigma"]**6 / dist**7) #Lenard-Jones Force 
     # Unit vectors; need to project the force onto the vectro in between the two particles
     ex = dx / dist
     ey = dy / dist # since dy is signed this encode force direction as well; points from i to j
@@ -348,8 +349,8 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     # if j is behind i then ex is negative and so is the force. This is again desired as it pulls particle x back, towards j.
     Fx_vdW = F_vdW_mag * ex # ex and ey already contain the force direciton.
     Fy_vdW = F_vdW_mag * ey 
-    Fx_vdW[mask] = 0. # zero the forces when the distances are too small
-    Fy_vdW[mask] = 0.
+    Fx_vdW[mask] = 48.*A * ( params["LJ - Sigma"]**12 / min_dist**13 -  params["LJ - Sigma"]**6 / min_dist**7) * ex[mask] # cap the forces when the distances are too small
+    Fy_vdW[mask] = 48.*A * ( params["LJ - Sigma"]**12 / min_dist**13 -  params["LJ - Sigma"]**6 / min_dist**7) * ey[mask]
 
     # initialize force vectors forces
     f_vdW_x =  zeros(len(x))
