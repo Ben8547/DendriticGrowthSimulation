@@ -1,7 +1,6 @@
 from defineParameters import params
 from numpy import exp, ones, sum, copy, max, array, argmin, sqrt, argsort, vstack, zeros, float32, searchsorted #tile, full, isnan, sqrt, min, nan, newaxis
 from numpy.random import rand
-from numpy import append as app
 from numba import njit
 
 #from getNextIndex import get_next_index
@@ -129,9 +128,9 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
                 d = d_particle
                 x_e, y_e = next_x, next_y
 
-            R_path += Rt * exp(d / lambda_)
+            resist_e += Rt * exp(d / lambda_)
             # in the future I would like to make it so that this chooses between the three loswest values with some weight; for now the nearest neighbor model works
-        
+        resist.append(resist_e)
     #R = sum(resist)/num_e # average the resitances
     R = min(resist) # only use for testing, use above comment for regular use; actually could make some sense if all of the electrons are forced through the few paths of least resistance - could incoorperate some weighted average
     return Volt / R
