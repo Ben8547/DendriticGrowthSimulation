@@ -45,6 +45,7 @@ params = { # create a dictionary to hold parameters
     "n" : 350, #500 # Number of particles
     "simulation_length" : 0.6, #6, # in seconds
 
+
     #--------------------------------
     # Initial position box and material size
     #--------------------------------
@@ -138,7 +139,7 @@ params['Hamaker_Sample_Size'] = 10
 # Drag Force Parameters
 #--------------------------------
 
-params['eta'] = 1.5 #1 # viscosity
+params['eta'] = 2.5 #1 # viscosity
 params["Cd"] = 50. # 1.8e4 # Drag Coefficient
 
 #--------------------------------
@@ -149,6 +150,7 @@ params['wI'] = 2e4 # Interfacial potential amplitude only with clusters
 params['RI'] = 25 #Interfacial potential distance only with clusters
 
 params["LJ - Sigma"] = 2.**(5./6.) * params['Average_particle_Radius'] # set ideal distance to 2R.
+
 
 #--------------------------------
 # Current Calculation Parameters

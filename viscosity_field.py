@@ -86,7 +86,7 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
 
 desired_beta = lambda x: params["viscosity_multiplier"] * beta_curve(x/params['L_x'],0.5,0.5) # inverse bell curve - low in middle - high at edges''' #This didn't work because it blew up at the edges
 def visc_dense_curve(x,a=2.5):
-    return 1 + a - (a/ (1+(x/params["L_x"]-0.5)**2) )
+    return params["eta"] + a - (a/ (1+(x/params["L_x"]-0.5)**2) )
 
 
 #from numpy import zeros_like
@@ -103,7 +103,7 @@ def viscocity_gradient(x,y,indicator,Visc_mult):
     mask = indicator(x, y)  # works for both grid and particles
     density = visc_dense_curve(x)
 
-    return jnp.where(mask, params["eta"]* Visc_mult*density, params["eta"]*density ) # the visc mult now affects inside the void instead of outside
+    return jnp.where(mask, Visc_mult*density, density ) # the visc mult now affects inside the void instead of outside
 
 #viscocity_gradient = jax.jit(viscocity_gradient)
 
@@ -135,7 +135,7 @@ if __name__ == "__main__": # view the viscosity map if the script is run directl
 
     plt.show()
 
-    Z = viscocity_gradient(X,Y,ind_func)
+    Z = viscocity_gradient(X,Y,ind_func,0.8)
     plt.imshow(Z)
     plt.colorbar()
     plt.show()
