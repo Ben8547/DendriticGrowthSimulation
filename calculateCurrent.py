@@ -53,7 +53,7 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
 
     x_now = copy(x)
     y_now = copy(y)
-    resist = []
+    resist = zeros(num_e, dtype=float32)
 
     x_sort_idx = argsort(x) # implmenent a binary search for efficiency
     x_now = x[x_sort_idx]
@@ -66,8 +66,15 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
         while x_e < L_x: # while we have not reached the right electrode
             #print(x_e)
             # step 2: choose direction; use shortest distance to next particle in line to proxy jump distance
-            dx = abs(x_now - x_e)
-            dx_min = min(dx[abs(dx) >= 5e-15]) # exclude 0
+
+            i = searchsorted(x_now, x_e) # index of x_e in sorted list
+            if i == 0:
+                dx_min = x_now[0] - x_e
+            elif i == N:
+                dx_min = x_e - x_now[-1]
+            else:
+                dx_min = min(x[i] - x_e, x_e - x[i-1])
+
             Boltzmann_F = boltz_fact_dist(2*dx_min,Volt,T,L_x) # this gives a ratio of occupancies at apprimate closet state to the left vs the appproximate closest state to the right
 
             # thus we can say that the probability of going right is approximately Boltzmann_F/Boltzmann_B times the probability of going left
@@ -98,24 +105,17 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
                 x_e, y_e = ( x_possible[j], y_possible[j]) # update the electron positions
             else: # d[j] = L_x - x_e
                 x_e, y_e = ( L_x, 0.) # y_position doesn't matter at the end electrode''' # this code is not optimized since it does not take advantage of a spatial structure - if we construct a k-d tree we can speed this up.
-            i = searchsorted(x_now, x_e) # index of x_e in sorted list
-            if i == 0:
-                dx_min = x[0] - x_e
-            elif i == N:
-                dx_min = x_e - x[-1]
-            else:
-                dx_min = min(x[i] - x_e, x_e - x[i-1])
-
+            
             if Forward and i < N:
-                dx = x[i] - x_e
-                dy = y[i] - y_e
+                dx = x_now[i] - x_e
+                dy = y_now[i] - y_e
                 d_particle = sqrt(dx*dx + dy*dy)
-                next_x, next_y = x[i], y[i]
+                next_x, next_y = x_now[i], y_now[i]
             elif not Forward and i > 0:
-                dx = x[i-1] - x_e
-                dy = y[i-1] - y_e
+                dx = x_now[i-1] - x_e
+                dy = y_now[i-1] - y_e
                 d_particle = sqrt(dx*dx + dy*dy)
-                next_x, next_y = x[i-1], y[i-1]
+                next_x, next_y = x_now[i-1], y_now[i-1]
             else:
                 d_particle = float('inf')
 
@@ -130,7 +130,7 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
 
             resist_e += Rt * exp(d / lambda_)
             # in the future I would like to make it so that this chooses between the three loswest values with some weight; for now the nearest neighbor model works
-        resist.append(resist_e)
+        resist[e] = resist_e
     #R = sum(resist)/num_e # average the resitances
     R = min(resist) # only use for testing, use above comment for regular use; actually could make some sense if all of the electrons are forced through the few paths of least resistance - could incoorperate some weighted average
     return Volt / R
