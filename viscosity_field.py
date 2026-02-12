@@ -101,8 +101,9 @@ def viscocity_gradient(x,y,indicator,Visc_mult):
     out[~out_void_mask] = params["eta"]
     return out'''
     mask = indicator(x, y)  # works for both grid and particles
+    density = visc_dense_curve(x)
 
-    return jnp.where(mask, params["eta"]* Visc_mult, params["eta"] ) # the visc mult now affects inside the void instead of outside
+    return jnp.where(mask, params["eta"]* Visc_mult*density, params["eta"]*density ) # the visc mult now affects inside the void instead of outside
 
 #viscocity_gradient = jax.jit(viscocity_gradient)
 
