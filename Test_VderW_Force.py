@@ -13,19 +13,19 @@ R = 0.002
 #x = array([0.,6.*R,8.*R])
 #y = array([0.,6.*R,-R])
 random.seed(10)
-x = 10. * (random.random(2)-0.5) * R
-y = 10. * (random.random(2)-0.5) * R
+x = 10. * (random.random(3)-0.5) * R
+y = 10. * (random.random(3)-0.5) * R
 vx = zeros_like(x)
 vy = copy(vx)
 
 initial = append(x,append(y,append(vx,vy)))
 
-tspan = linspace(0.,10.,1000)
+tspan = linspace(0.,2.,1000)
 
 def force(t,state):
     coord = column_stack((state[0:len(state)//4],state[len(state)//4:len(state)//2]))
     tree = cKDTree(coord)
-    out=vdW_Force_AND_Dipole_Force(coord, tree, R=R, A=0.00001, Ex=params["V"]/params["L_x"], Ey=0., eps_r=150.)
+    out=vdW_Force_AND_Dipole_Force(coord, tree, R=R, A=0.01)
     return append(state[len(state)//2:3*len(state)//4],append(state[3*len(state)//4:len(state)],append(out[0],out[1])))
 
 solver = RK45(

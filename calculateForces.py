@@ -336,7 +336,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     dist2 = dx**2 + dy**2 # list of pair y-distances squaresd
     dist =  sqrt(dist2) # list of pair y-distances
 
-    min_dist = 0.001*R
+    min_dist = 0.8 * params["LJ - Sigma"] # Caps the force at slightly less than 0.8*2R
     mask = (dist < min_dist)  # logical index of particles that are getting close to the asymptote - turn these off for safety
     
     F_vdW_mag = 48.*A * ( params["LJ - Sigma"]**12 / dist**13 -  params["LJ - Sigma"]**6 / dist**7) #Lenard-Jones Force 
