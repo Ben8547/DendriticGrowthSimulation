@@ -337,20 +337,23 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     dist =  sqrt(dist2) # list of pair y-distances
 
     min_dist = 0.8 * params["LJ - Sigma"] # Caps the force at slightly less than 0.8*2R
-    mask = (dist < min_dist)  # logical index of particles that are getting close to the asymptote - turn these off for safety
+    dist = maximum(min_dist,dist)
+
+    # computing the force; I've read that it is quicker to manually compute the powers since python's generic power computation will be slow for these large numbers.
+    invdist = params["LJ - Sigma"]/dist
+    invdist3 = invdist * invdist * invdist
+    invdist6 = invdist3 * invdist3
     
-    F_vdW_mag = 48.*A * ( params["LJ - Sigma"]**12 / dist**13 -  params["LJ - Sigma"]**6 / dist**7) #Lenard-Jones Force 
+    F_vdW_mag = 48.*A * invdist*invdist6 * ( (invdist6) -  (0.5) ) / params["LJ - Sigma"] #Lenard-Jones Force 
     # Unit vectors; need to project the force onto the vectro in between the two particles
     ex = dx / dist
-    ey = dy / dist # since dy is signed this encode force direction as well; points from i to j
+    ey = dy / dist # since dy is signed this encodes force direction as well; points from i to j
 
     # Force components on particle i due to j; i.e. the force should point from particle i to particle j
     # if particle i is behind j, ex is positive, we want to x force to point in the positive direction since this will pull i towards j
     # if j is behind i then ex is negative and so is the force. This is again desired as it pulls particle x back, towards j.
     Fx_vdW = F_vdW_mag * ex # ex and ey already contain the force direciton.
     Fy_vdW = F_vdW_mag * ey 
-    Fx_vdW[mask] = 48.*A * ( params["LJ - Sigma"]**12 / min_dist**13 -  params["LJ - Sigma"]**6 / min_dist**7) * ex[mask] # cap the forces when the distances are too small
-    Fy_vdW[mask] = 48.*A * ( params["LJ - Sigma"]**12 / min_dist**13 -  params["LJ - Sigma"]**6 / min_dist**7) * ey[mask]
 
     # initialize force vectors forces
     f_vdW_x =  zeros(len(x))
