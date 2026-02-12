@@ -1,7 +1,9 @@
 from defineParameters import params
-from numpy import exp, ones, sum, copy, max, array, argmin, sqrt, argsort, vstack, zeros, float32 #tile, full, isnan, sqrt, min, nan, newaxis
+from numpy import exp, ones, sum, copy, max, array, argmin, sqrt, argsort, vstack, zeros, float32, searchsorted #tile, full, isnan, sqrt, min, nan, newaxis
 from numpy.random import rand
 from numpy import append as app
+from numba import njit
+
 #from getNextIndex import get_next_index
 
 def distances(x1, x2, y1, y2):
@@ -29,7 +31,7 @@ def boltz_fact_dist(d,Volt, T, L_x):
 # the above energies assume a paralell plate capacitor of infinte area. This is hopefully a decent approximation
 
 
-
+@njit # for speed
 def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Monte-Carlo method
     # What this function does:
     # 0) If voltage is 0, return 0 since that will be the end result anyway
@@ -53,9 +55,15 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
     x_now = copy(x)
     y_now = copy(y)
     resist = []
+
+    x_sort_idx = argsort(x) # implmenent a binary search for efficiency
+    x_now = x[x_sort_idx]
+    y_now = y[x_sort_idx] # sort both by the x indicies to preserve order
+    N = len(x)  
+
     for e in range(num_e): #iterate over all simulated electrons
         x_e, y_e = (e_position[0,e],e_position[1,e]) # initial electron position
-        resist_path = [] # resitances along the path of a single electron
+        resist_e = 0. # resitances along the path of a single electron
         while x_e < L_x: # while we have not reached the right electrode
             #print(x_e)
             # step 2: choose direction; use shortest distance to next particle in line to proxy jump distance
@@ -65,14 +73,17 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
 
             # thus we can say that the probability of going right is approximately Boltzmann_F/Boltzmann_B times the probability of going left
             Probability_left = 1./(1. + Boltzmann_F) # probability of moving left
-            if rand() > Probability_left:
+            '''if rand() > Probability_left:
                 Forward = True # choose to move forward with probability according to the electric field energy bias
             else:
                 Forward = False
             if x_e <= 0.:
-                Forward = True # force forward motion if we are at or (somehow) behind the electrode
+                Forward = True # force forward motion if we are at or (somehow) behind the electrode'''
+            Forward = rand() > Probability_left # more concise than the above
+            if x_e <= 0.:
+                Forward = True
             
-            if Forward: # if moving forward
+            '''if Forward: # if moving forward
                 x_possible = x[x > x_e]
                 y_possible = y_now[x > x_e]
             else:
@@ -83,12 +94,43 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
             # at this point d is an empty array when x_possible is empty
             d = app(d,L_x-x_e) # If the final electrode is closer then jump there instead of a particle.
             j = argmin(d)
-            resist_path.append(Rt * exp( d[j] / lambda_))
+            resist_e +=  Rt * exp( d[j] / lambda_) # add to the total path resistance
             if j < len(d)-1:
                 x_e, y_e = ( x_possible[j], y_possible[j]) # update the electron positions
             else: # d[j] = L_x - x_e
-                x_e, y_e = ( L_x, 0.) # y_position doesn't matter at the end electrode
-        resist.append( sum(resist_path) ) # in the future I would like to make it so that this chooses between the three loswest values with some weight; for now the nearest neighbor model works
+                x_e, y_e = ( L_x, 0.) # y_position doesn't matter at the end electrode''' # this code is not optimized since it does not take advantage of a spatial structure - if we construct a k-d tree we can speed this up.
+            i = searchsorted(x_now, x_e) # index of x_e in sorted list
+            if i == 0:
+                dx_min = x[0] - x_e
+            elif i == N:
+                dx_min = x_e - x[-1]
+            else:
+                dx_min = min(x[i] - x_e, x_e - x[i-1])
+
+            if Forward and i < N:
+                dx = x[i] - x_e
+                dy = y[i] - y_e
+                d_particle = sqrt(dx*dx + dy*dy)
+                next_x, next_y = x[i], y[i]
+            elif not Forward and i > 0:
+                dx = x[i-1] - x_e
+                dy = y[i-1] - y_e
+                d_particle = sqrt(dx*dx + dy*dy)
+                next_x, next_y = x[i-1], y[i-1]
+            else:
+                d_particle = float('inf')
+
+            d_end = L_x - x_e
+
+            if d_end < d_particle:
+                d = d_end
+                x_e, y_e = L_x, 0.0
+            else:
+                d = d_particle
+                x_e, y_e = next_x, next_y
+
+            R_path += Rt * exp(d / lambda_)
+            # in the future I would like to make it so that this chooses between the three loswest values with some weight; for now the nearest neighbor model works
         
     #R = sum(resist)/num_e # average the resitances
     R = min(resist) # only use for testing, use above comment for regular use; actually could make some sense if all of the electrons are forced through the few paths of least resistance - could incoorperate some weighted average
