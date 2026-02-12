@@ -218,7 +218,7 @@ def drag_force(x, y, x_v, y_v, Cd,Visc_mult):
 
 #from scipy.spatial.distance import pdist, squareform # pdist takes advantage of the symmetry of distance calculations
 
-def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"], A=1., Ex=params["V"]/params["L_x"], Ey=0., eps_r=150.):
+"""def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"], A=1., Ex=params["V"]/params["L_x"], Ey=0., eps_r=150.):
     # since both use a distance matrix, combine them for efficiency - only compute matrix once
     '''
     Docstring for vdW_Force
@@ -264,8 +264,7 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
 
     # Hamaker vdW force magnitude 
     d = h+2.*R
-    #F_vdW_mag =  A/6 * ( (4.*R**2.*d)/(d**2. -4.*R**2.)**2 + (4.*R**2. * d)/(d**4.) + (2.*d)/(d**2.-4.*R**2.) - 2./(d)  ) #A * R / (12.0 * h**2) # Derjaguin approximation - h << R
-    F_vdW_mag =  A/6 * ( (4.*R**2.*d)/(d**2. -4.*R**2.)**2 + (4.*R**2. * d)/(d**4.) + (2.*d)/(d**2.-4.*R**2.) - 2./(d)  ) # Taylor expansion of the force - prevents it from blowing up at zero - taking right derivatives only - only these matter because we use distance
+    F_vdW_mag =  A/6 * ( (4.*R**2.*d)/(d**2. -4.*R**2.)**2 + (4.*R**2. * d)/(d**4.) + (2.*d)/(d**2.-4.*R**2.) - 2./(d)  ) #A * R / (12.0 * h**2) # Derjaguin approximation - h << R
     # Unit vectors; need to project the force onto the vectro in between the two particles
     ex = dx / dist
     ey = dy / dist # since dy is signed this encode force direction as well; points from i to j
@@ -312,7 +311,57 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     add.at(f_c_y, i,  F_c_y)
     add.at(f_c_y, j, -F_c_y)
     
-    return f_c_x + f_vdW_x, f_c_y + f_vdW_y
+    return f_c_x + f_vdW_x, f_c_y + f_vdW_y"""
+
+def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"], A=1.):
+    # The Hamaker potential has been extrordinarily problemeatic in the simualtions since it has a singularity at d = 2R.
+    # I'm, switching to a Lenard-Jones potential because this won't have the same issues and we can tune the minimal energy location instead of tuning the Hamaker force magnetude.
+    # It feels cheep; but the force not being defined at 2R has caused so many problems that I haven't been able to satisfacorially fix that I need to to change this force.
+    x = coords[:,0]
+    y = coords[:,1]
+
+    # Define cutoffs (forces are negligible beyond these)
+    # vdW dies at ~1/r^7, Dipole at ~1/r^4
+    cutoff = 10. * R
+
+    # Find all pairs within cutoff. Returns (i, j) indices of the coords matrix
+    pairs = tree.query_pairs(r=cutoff, output_type='ndarray') # returns nx2 matrix where n is the number of particles pairs within the cut off distance. Each row of the matrix contains a pair of indicies within the distance. Note that this returns particle index, i.e. the index of the row in the coords matrix
+
+
+    i = pairs[:, 0] # list of the first coordinate in the pairs
+    j = pairs[:, 1] # list of the second coordinate in the pairs
+
+    dx = x[j] - x[i] # pair x-distances; dx points from i to j
+    dy = y[j] - y[i] # pair y-distnaces; points from i to j
+    dist2 = dx**2 + dy**2 # list of pair y-distances squaresd
+    dist =  sqrt(dist2) # list of pair y-distances
+
+    mask = (dist < 2. * R)  # logical index of particles that are less than two partilce radii apart; we only compute vdw force for *not* these to prevent collisions; we choose 2.001 to prevent the stiffness of the force to cuase particles to "slingshot" about
+
+    F_vdW_mag = 48.*params["LJ-Well_depth"] * ( A**12 / dist**13 -  A**6 / dist**7) #Lenard-Jones Force 
+    # Unit vectors; need to project the force onto the vectro in between the two particles
+    ex = dx / dist
+    ey = dy / dist # since dy is signed this encode force direction as well; points from i to j
+
+    # Force components on particle i due to j; i.e. the force should point from particle i to particle j
+    # if particle i is behind j, ex is positive, we want to x force to point in the positive direction since this will pull i towards j
+    # if j is behind i then ex is negative and so is the force. This is again desired as it pulls particle x back, towards j.
+    Fx_vdW = F_vdW_mag * ex # ex and ey already contain the force direciton.
+    Fy_vdW = F_vdW_mag * ey 
+    Fx_vdW[mask] = 0. # zero the forces when the distances are too small
+    Fy_vdW[mask] = 0.
+
+    # initialize force vectors forces
+    f_vdW_x =  zeros(len(x))
+    f_vdW_y =  zeros(len(y))
+
+    # Add force to i, subtract (Newton's 3rd) from j
+    add.at(f_vdW_x, i,  Fx_vdW)
+    add.at(f_vdW_x, j, -Fx_vdW) # the force on j is opposite the force on i
+    add.at(f_vdW_y, i,  Fy_vdW)
+    add.at(f_vdW_y, j, -Fy_vdW)
+        
+    return f_vdW_x, f_vdW_y
 
 def interfacial_force(n, x_p, y_p, wI, RI, Lx):
     return 0. # I'm setting this force to zero becuase I can't think of physical force that would scale strictly off of distance like this 

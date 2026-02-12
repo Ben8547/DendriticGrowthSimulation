@@ -94,7 +94,13 @@ params = { # create a dictionary to hold parameters
     'blob_scale': 0.05, #0.08
     'num_lattice_points': int(1e6),
     "angle" : np.pi/2, # angle of the sector from which the electric field may be transmitted
-    "viscosity_multiplier": np.genfromtxt("Visc.txt",float)#2.5
+    "viscosity_multiplier": np.genfromtxt("Visc.txt",float),#2.5
+
+    # Lenard-Jones
+
+    "LJ-Well_depth" : 1.,
+    "LJ - Sigma" : np.genfromtxt("LJ_sigma.txt",float)
+
 }
 
 # add to params
