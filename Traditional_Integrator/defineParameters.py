@@ -1,0 +1,193 @@
+# Ported into python from matlab by Ben Campbell
+# Original Author: Samuel Moore-Smith and Jason Yuan
+# Further updates by Ben Campbell
+'''
+Purpose: Define Parameters and Setup Simulation for Gold Memristor Simulation
+'''
+
+import numpy as np
+from numpy.random import rand, seed
+from scipy.constants import Boltzmann, elementary_charge
+
+s = 10
+
+seed(s) # for consistant testing; may comment out for actual runs
+
+params = { # create a dictionary to hold parameters
+    #--------------------------------
+    # Integration method
+    #--------------------------------
+
+    "Until_end" : True, # should the simulation run until the particles reach the end electrode?
+
+    "Velocity_Verlet" : "True", # if True, uses custom verlet algorithm, if False it uses scipy.integrate.solve_ivp()
+    'Verlet_error_per_unit_time': 1e-2,
+    "scipy_tag" : "RK45", # should be a string for the method argument of scipy.integrate.solve_ivp()
+    "rtol" : 1e-3, # relative error param for scipy integration
+    "atol" : 1e-3, # absolute error param for scipy integration
+
+    #--------------------------------
+    # Basic Simulation Parameters
+    #--------------------------------
+
+    'i' : 1, # Simulation number
+    "fin" : 1, #If 1, stops movement of particles once they hit the other end
+
+    #--------------------------------
+    # Well-understood Physical Constants
+    #--------------------------------
+
+    'k_B' : Boltzmann, # Boltzmann's constant in J/K
+    "T_coeff" : 3000, # !!! Temperature coefficient [K^-1]
+
+    #--------------------------------
+    # Simulation Length and Particle Count
+    # --------------------------------
+    
+    "n" : 500, #350, #500 # Number of particles
+    "simulation_length" : 0.6, #6, # in seconds
+
+
+    #--------------------------------
+    # Initial position box and material size
+    #--------------------------------
+    'L_x' : 60, #100, # Size of material in x-direction
+    'L_y' : 45, #100, # Size of material in y-direction
+
+    #--------------------------------
+    # Heat related parameters
+    #--------------------------------
+    'T_0' : 295., #300 # Initial temperature in K
+    'Q' : 1, # Thermal Energy [J]
+    'alpha' : 1e-5, # Thermal diffusivity in m^2/s; there are two alpha parameters, this one seems to get deleated by the latter
+    # Jasons code?
+    'CT' : 0.24*5e-9, # !!! Heat capacity = specific heat capacity*mass [J/K] http://www2.ucdsb.on.ca/tiss/stretton/database/Specific_Heat_Capacity_Table.html -- check for gold
+
+    #--------------------------------
+    # Pinning Force Parameters
+    #--------------------------------
+    'm' : 100, # 100 # number of pinning sites
+    # Pinning Site Locations and Forces
+    "wpa_repulse" : 2000, #2000,
+    "wpa_attract" : 500, #500,
+
+    #--------------------------------
+    # Applied Electric Field Parameters
+    #--------------------------------
+    
+    "is_Voltage_constant" : False,
+    "V" : 6.,#3., # applies voltage
+    "structual_in_force" : True, # If true, the structual impact of the voids is computed in the applied force, if true it is computed in the solver
+
+    #--------------------------------
+    #Residual Stress Parameters
+    #--------------------------------
+    'w_resid' : 1., #1.0, #Strength of residual force
+
+    'E' : 323.5e9, # Young's modulus of AlN in Pa = N/m^2
+    'nu' : 0.23, # Poisson's ratio of AlN, not sure if this should be used or be constant
+    "k_C" : 8.99e9, # Coulomb's constant in N*m^2/C^2
+    "q" : elementary_charge, # Elementary charge in C (charge of an electron / proton)
+    "r_Ag" : 126e-12, # Ionic radius of Ag in m
+
+    #-----------------------------------
+    # Stress induced void map parameters
+    #-----------------------------------
+    'n_regions': 30,
+    'blob_scale': 0.05, #0.08
+    'num_lattice_points': int(1e6),
+    "angle" : np.pi/2, # angle of the sector from which the electric field may be transmitted
+    "viscosity_multiplier": np.genfromtxt("Visc.txt",float),#2.5
+
+    # Lenard-Jones
+
+    "LJ-Well_depth" : np.genfromtxt("Hamaker.txt",float)
+
+}
+
+# add to params
+
+# Applied force in void radius
+params["elec_transfer_radius"] = params["L_x"]/150. # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
+
+# simulation parameters
+params['dt'] = params["simulation_length"]/100.  # Time step for simulation; originally 2000
+params["tspan"] = np.linspace(0, params["simulation_length"], 500) # Time span for simulation output
+
+# material and electrode dimensions
+params["electrode_width"] = params["L_x"] / 2 # Width of electrodes on material
+params["electrode_height"] = params["L_y"] # Height of electrodes on material
+
+#pinning parameters
+params['wp_attract']= (-(rand(1,params['m']//2))*params['wpa_attract'] - params['wpa_attract']/2) # update the value from a scalar to an array
+params['wp_repulse']= ((rand(1,params['m']//2))*params['wpa_repulse'] + params['wpa_repulse']/2)
+params['w_pin'] = np.concatenate((params['wp_attract'], params['wp_repulse']), axis=None) # Combine attractive and repulsive pinning forces into one array
+params['x_pin'] = rand(params['m'],1) * params['L_x'] # Randomly distribute pinning sites in x-direction
+params['y_pin'] = rand(params['m'],1) * params['L_y'] - 0.5*params['L_y'] # Randomly distribute pinning sites in y-direction
+#params['w_pin'] = 100 # Pinning potential amplitude
+params['R_pin'] = rand(params['m'],1) * 10. # Pinning potential distance
+
+# Jasons code?
+params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from https://www.spiraxsarco.com/learn-about-steam/steam-engineering-principles-and-heat-transfer/heat-transfer
+
+#applied electric field parameters
+params['alpha'] = 5e-11 +  rand(params['n']) * 5e-11  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
+params['eps_0'] = 8.854e-12
+params["Average_particle_Radius"] = params["elec_transfer_radius"]/2. # since the particles must touch for electric transfer
+params["Hamaker Constant"] = np.genfromtxt("Hamaker.txt",float) #6. #1. # van der Waals force constant - depends upon material
+params['Hamaker_Sample_Size'] = 10
+
+#--------------------------------
+# Drag Force Parameters
+#--------------------------------
+
+params['eta'] = 2.5 #1 # viscosity
+params["Cd"] = 50. # 1.8e4 # Drag Coefficient
+
+#--------------------------------
+# Interfacial Potential Parameters
+#--------------------------------
+
+params['wI'] = 2e4 # Interfacial potential amplitude only with clusters
+params['RI'] = 25 #Interfacial potential distance only with clusters
+
+params["LJ - Sigma"] = 2.**(5./6.) * params['Average_particle_Radius'] # set ideal distance to 2R.
+
+
+#--------------------------------
+# Current Calculation Parameters
+#--------------------------------
+params['num_e'] = 20 #100 # Number of electrons to simulate
+params['Rt'] = 1 # Rt is the tunnelling resistance amplitude (assumed the same for all islands)
+params['lambda'] = 2 #2. # effective tunneling length
+params['steps'] = 120
+
+#--------------------------------
+# Voltage function
+#--------------------------------
+if not params['is_Voltage_constant']:
+    def voltage(t):
+        time = t % 2e-2 # period of 2 centi seconds
+        if time > 1e-2: # 0 until 1e-2 s and then V onwards; repeats from 2e-2 s
+            return params["V"]
+        else: 
+            return 0
+    params["V_func"] = voltage
+
+#--------------------------------
+# File Settings
+#--------------------------------
+
+params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{params['viscosity_multiplier']}_vdW-{params['Hamaker Constant']}_Ly-{params["L_y"]}"
+
+params["seed"] = s
+
+# if we run this file directly, do some stuff
+if __name__ == "__main__": # graph the voltage
+    if not params["is_Voltage_constant"]:
+        import matplotlib.pyplot as plt
+        times = np.linspace(0,5e-1,1000)
+        voltages = [ params["V_func"](t) for t in times ]
+        plt.plot(times,voltages)
+        plt.title("The Voltage Pulses")
+        plt.show()

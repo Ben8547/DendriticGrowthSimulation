@@ -105,7 +105,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
     inside = (x_p < Lx)
     is_void = (ind_func(x_p, y_p) == 1)[0]
 
-    if False: # Sam's orginal code; debug gate
+    if True: # Sam's orginal code; debug gate
         Fa_x[inside] = alpha[inside] * Volt / ((0.5) * Lx)
         return Fa_x * 1e15
 
