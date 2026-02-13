@@ -1,6 +1,7 @@
 from defineParameters import params
-from numpy import exp, ones, sum, copy, max, array, argmin, sqrt, argsort, vstack, zeros, float32, searchsorted #tile, full, isnan, sqrt, min, nan, newaxis
+from numpy import exp, ones, sum, copy, max, minimum, argmin, sqrt, argsort, column_stack, vstack, zeros, float32, searchsorted #tile, full, isnan, sqrt, min, nan, newaxis
 from numpy.random import rand
+from scipy.spatial import cKDTree # makes spatial searches much faster
 #from numba import njit
 
 #from getNextIndex import get_next_index
@@ -44,6 +45,8 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
     # 8) If not too slow - repeat and average again
     # 9) Multiply the final reciprial resistence by the voltage - gives the current; return thus value
 
+    
+
     if Volt == 0. or Volt == 0: # step 0
         return 0.
 
@@ -51,31 +54,32 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
     e_position = vstack([zeros((1,num_e)),L_y * rand(1,num_e)],dtype=float32) # use float 32 for performance; most of the error comes from integration anyway
     # row 0 are x-values; row 1 are y-values
 
-    x_now = copy(x)
-    y_now = copy(y)
+    #x_now = copy(x)
+    #y_now = copy(y)
     resist = zeros(num_e, dtype=float32)
 
+    # Turn the points into a KDTree for easy spatial search
     x_sort_idx = argsort(x) # implmenent a binary search for efficiency
-    x_now = x[x_sort_idx]
-    y_now = y[x_sort_idx] # sort both by the x indicies to preserve order
-    N = len(x)  
+    x_sort = x[x_sort_idx]
+    y_sort = y[x_sort_idx] # sort both by the x indicies to preserve order
 
     for e in range(num_e): #iterate over all simulated electrons
+        prev_i = -1
         x_e, y_e = (e_position[0,e],e_position[1,e]) # initial electron position
         resist_e = 0. # resitances along the path of a single electron
         while x_e < L_x: # while we have not reached the right electrode
             #print(x_e)
             # step 2: choose direction; use shortest distance to next particle in line to proxy jump distance
+            i = searchsorted(x_sort,x_e,side='left') # gives me the index of x_e in the sorted list; need to change side to left so that we don't count x_e
 
-            i = searchsorted(x_now, x_e) # index of x_e in sorted list
             if i == 0:
-                dx_min = x_now[0] - x_e
-            elif i == N:
-                dx_min = x_e - x_now[-1]
+                dx_min = x_sort[0] - x_e
+            elif i == len(x_sort)-1 or x_e > x_sort[-1]: # include x_e > x_sort[-1] because all of the particles are initially behind the electrode
+                dx_min = x_e - x_sort[-1]
             else:
-                dx_min = min(x[i] - x_e, x_e - x[i-1])
+                dx_min = min(x_sort[i+1] - x_e, x_e - x_sort[i-1]) # estimate; x distance considered only
 
-            Boltzmann_F = boltz_fact_dist(2*dx_min,Volt,T,L_x) # this gives a ratio of occupancies at apprimate closet state to the left vs the appproximate closest state to the right
+            Boltzmann_F = boltz_fact_dist(2*dx_min,Volt,T,L_x) # this gives a ratio of occupancies at approximate closet state to the left vs the appproximate closest state to the right
 
             # thus we can say that the probability of going right is approximately Boltzmann_F/Boltzmann_B times the probability of going left
             Probability_left = 1./(1. + Boltzmann_F) # probability of moving left
@@ -89,44 +93,23 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
             if x_e <= 0.:
                 Forward = True
             
-            '''if Forward: # if moving forward
-                x_possible = x[x > x_e]
-                y_possible = y_now[x > x_e]
+            if Forward: # if moving forward
+                x_possible = x_sort[i+1:] # i+1 to avoind stationarity
+                y_possible = y_sort[i+1:]
             else:
-                x_possible = x[x < x_e]
-                y_possible = y_now[x < x_e]
+                x_possible = x_sort[0:i]
+                y_possible = y_sort[0:i]
+            coords = column_stack((x_possible, y_possible))
+            Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
             # find nearest particle in front of x_i
-            d = distances(x_e,x_possible,y_e,y_possible) # distance vector comparing each other point x_j to x_i where x_j > x_i
+            d, ind = Tree.query([x_e,y_e]) # find closest point to (x_e,y_e) using the search tree
             # at this point d is an empty array when x_possible is empty
-            d = app(d,L_x-x_e) # If the final electrode is closer then jump there instead of a particle.
-            j = argmin(d)
-            resist_e +=  Rt * exp( d[j] / lambda_) # add to the total path resistance
-            if j < len(d)-1:
-                x_e, y_e = ( x_possible[j], y_possible[j]) # update the electron positions
-            else: # d[j] = L_x - x_e
-                x_e, y_e = ( L_x, 0.) # y_position doesn't matter at the end electrode''' # this code is not optimized since it does not take advantage of a spatial structure - if we construct a k-d tree we can speed this up.
-            
-            if Forward and i < N:
-                dx = x_now[i] - x_e
-                dy = y_now[i] - y_e
-                d_particle = sqrt(dx*dx + dy*dy)
-                next_x, next_y = x_now[i], y_now[i]
-            elif not Forward and i > 0:
-                dx = x_now[i-1] - x_e
-                dy = y_now[i-1] - y_e
-                d_particle = sqrt(dx*dx + dy*dy)
-                next_x, next_y = x_now[i-1], y_now[i-1]
-            else:
-                d_particle = float('inf')
-
-            d_end = L_x - x_e
-
-            if d_end < d_particle:
-                d = d_end
-                x_e, y_e = L_x, 0.0
-            else:
-                d = d_particle
-                x_e, y_e = next_x, next_y
+            d = minimum(d,L_x-x_e) # If the final electrode is closer then jump there instead of a particle.
+            resist_e +=  Rt * exp( d / lambda_) # add to the total path resistance
+            if d - (L_x-x_e) > 1e-15:
+                x_e, y_e = ( x_possible[ind], y_possible[ind]) # update the electron positions
+            else: # d = L_x - x_e
+                x_e, y_e = ( L_x, 0.) # y_position doesn't matter at the end electrode
 
             resist_e += Rt * exp(d / lambda_)
             # in the future I would like to make it so that this chooses between the three loswest values with some weight; for now the nearest neighbor model works
