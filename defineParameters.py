@@ -44,7 +44,7 @@ params = { # create a dictionary to hold parameters
     # Simulation Length and Particle Count
     # --------------------------------
     
-    "n" : 350, #500 # Number of particles
+    "n" : 500, #350, #500 # Number of particles
     "simulation_length" : 0.6, #6, # in seconds
 
 

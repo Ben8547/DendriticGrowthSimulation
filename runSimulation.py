@@ -1,4 +1,5 @@
-from numpy import random, zeros, meshgrid, linspace, concatenate, where, exp
+from numpy import random, zeros, meshgrid, linspace, concatenate, array, exp,average
+#from math import exp
 #from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
@@ -24,6 +25,8 @@ def run_simulation(params, Hamaker, Visc):
 
     random.seed(1)
 
+    Lx = params["L_x"]
+
     # ------------------------
     # Unpack parameters
     # ------------------------
@@ -38,15 +41,19 @@ def run_simulation(params, Hamaker, Visc):
         # i actually just solved for the general solution's eigen values so we don't need the root function.
         from viscosity_field import average_density
         from scipy.optimize import fsolve # need this otherwise we would have to appeal to the Lambert W function (probably - I didn't actually do the algebra to that point)
-        a = params["alpha"] * params["V"]/ (0.5 * params["L_x"]) * 1e15# electric field acceleration
-        b = params["Cd"] * average_density# drag coeficient (x-component)
+        a = average(params["alpha"]) * params["V"]/ (0.5 * params["L_x"]) * 1e15# electric field acceleration
+        b = params["Cd"] * average_density # drag coeficient (x-component)
+        #print(b)
         c_2 = a/(b*b)
         c_1 = -c_2
-        particularAndGeneralSolution = lambda t: c_1 + c_2 * exp(-b*t) + (a/b)*t
+        particularAndGeneralSolution = lambda t: c_1 + c_2 * exp(-b*t) + (a/b)*t - Lx
         derivative = lambda t: -c_2*b*exp(-b*t) + (a/b)
-        tspan[-1] = 2.1 * fsolve(particularAndGeneralSolution,0.,fprime=derivative,full_output=False) # since voltage is off half of the time we need to add a bit more time
+        tspan[-1] = 2.1 * fsolve(particularAndGeneralSolution,
+                        array([0.1]),
+                        fprime=derivative)[0] # since voltage is off half of the time we need to add a bit more time
+        print(f"anticipated {tspan[-1]} seconds to be simulated")
+        tspan = linspace(tspan[0],tspan[-1],len(tspan))
 
-    Lx = params["L_x"]
     electrode_width = params["electrode_width"]
     electrode_height = params["electrode_height"]
 
@@ -140,7 +147,7 @@ def run_simulation(params, Hamaker, Visc):
     current_time_indicator = 1 # the next time at which to capture the animation frame; index of the tspan array
     from scipy.integrate import RK45, BDF, Radau # various integrators to try
 
-    with writer.saving(fig, f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{Visc}_vdW-{Hamaker}_Ly-{params["L_y"]}"+'.mp4', dpi=50): # this enables streaming the simulation data to a file concurrent with the simualtion - enables an approximate 5x speed up
+    with writer.saving(fig, f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{Visc}_vdW-{Hamaker}_Ly-{params["L_y"]}-{params['n']}particles"+'.mp4', dpi=50): # this enables streaming the simulation data to a file concurrent with the simualtion - enables an approximate 5x speed up
         # use scipy integrator
         solver = RK45(
         fun=integrable_calcualte_forces,

@@ -49,7 +49,7 @@ if gen_matrix:
 
     for i in range(3):
         for j in range(3):
-            fname = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{matrix_viscMult[j]}_vdW-{matrix_Ham[i]}_Ly-{params["L_y"]}.mp4"
+            fname = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{matrix_viscMult[j]}_vdW-{matrix_Ham[i]}_Ly-{params["L_y"]}-{params['n']}particles.mp4"
             #fname = r"\\?\\" + abspath(fname) # the filenames are long so append the windows long filename prefix; preventative measure
             #print(exists(fname)) # debug
             frames.append(last_frame_from_video(fname)) # get the last frame of the current file - add to list

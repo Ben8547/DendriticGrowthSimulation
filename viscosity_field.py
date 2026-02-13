@@ -36,7 +36,7 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
         Function f(x, y) that returns 0 or 1.
     """
 
-    rng = default_rng(seed)
+    rng = default_rng(seed+1)
 
     # Blob centers
     x_centers = jnp.copy(Lx * rng.beta(a=0.5, b=0.5, size=n_regions))# for a = b = 0.5 the centers will be more likely to appear at the edges
