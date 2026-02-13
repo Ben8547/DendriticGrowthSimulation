@@ -18,6 +18,8 @@ params = { # create a dictionary to hold parameters
     # Integration method
     #--------------------------------
 
+    "Until_end" : False, # should the simulation run until the particles reach the end electrode?
+
     "Velocity_Verlet" : "True", # if True, uses custom verlet algorithm, if False it uses scipy.integrate.solve_ivp()
     'Verlet_error_per_unit_time': 1e-2,
     "scipy_tag" : "RK45", # should be a string for the method argument of scipy.integrate.solve_ivp()

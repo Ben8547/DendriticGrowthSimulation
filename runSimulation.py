@@ -1,4 +1,4 @@
-from numpy import random, zeros, meshgrid, linspace, concatenate, where
+from numpy import random, zeros, meshgrid, linspace, concatenate, where, exp
 #from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
@@ -30,6 +30,21 @@ def run_simulation(params, Hamaker, Visc):
     n = params["n"]
     To = params["T_0"]
     tspan = params["tspan"]
+    if params["Until_end"]: # the point of this section is to estimate how long we need to run the integrator for in order to get an electron to the other node
+        # we make the assumption that the only forces are the drag force and the electric field force with all particles stating from x=0 and rest. Then the model reduces
+        # to a second order linear, constant coeficient equation that we can solve exactly; it is then possible to find the time at which the particles reach the end electrode.
+        # since the viscosity of the medium changes, we take it to be the average value - computed via some integral over the density function on the interval.
+        #from scipy.optimize  import root # find polynomial roots - to get eigenvalues of the ODE; fsolve to find the time
+        # i actually just solved for the general solution's eigen values so we don't need the root function.
+        from viscosity_field import average_density
+        from scipy.optimize import fsolve # need this otherwise we would have to appeal to the Lambert W function (probably - I didn't actually do the algebra to that point)
+        a = params["alpha"] * params["V"]/ (0.5 * params["L_x"]) * 1e15# electric field acceleration
+        b = params["C_d"] * average_density# drag coeficient (x-component)
+        c_2 = a/(b*b)
+        c_1 = -c_2
+        particularAndGeneralSolution = lambda t: c_1 + c_2 * exp(-b*t) + (a/b)*t
+        derivative = lambda t: -c_2*b*exp(-b*t) + (a/b)
+        tspan[-1] = 2.1 * fsolve(particularAndGeneralSolution,0.,fprime=derivative,full_output=False) # since voltage is off half of the time we need to add a bit more time
 
     Lx = params["L_x"]
     electrode_width = params["electrode_width"]

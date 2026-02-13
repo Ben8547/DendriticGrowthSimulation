@@ -12,6 +12,7 @@ from defineParameters import params
 from scipy.special import gamma
 import jax
 import jax.numpy as jnp
+from scipy.integrate import quad
 
 
 def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params["n_regions"], blob_scale=params["blob_scale"], seed=params["seed"]):
@@ -87,6 +88,8 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
 desired_beta = lambda x: params["viscosity_multiplier"] * beta_curve(x/params['L_x'],0.5,0.5) # inverse bell curve - low in middle - high at edges''' #This didn't work because it blew up at the edges
 def visc_dense_curve(x,a=2.5):
     return params["eta"] + a - (a/ (1+(x/params["L_x"]-0.5)**2) )
+
+average_density = quad(visc_dense_curve,0,params["L_x"]) / params['L_x']
 
 
 #from numpy import zeros_like

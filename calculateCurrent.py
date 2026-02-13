@@ -1,5 +1,5 @@
 from defineParameters import params
-from numpy import exp, ones, sum, copy, max, minimum, argmin, sqrt, argsort, column_stack, vstack, zeros, float32, searchsorted #tile, full, isnan, sqrt, min, nan, newaxis
+from numpy import exp, ones, abs, copy, max, minimum, argmin, sqrt, argsort, column_stack, vstack, zeros, float32, searchsorted #tile, full, isnan, sqrt, min, nan, newaxis
 from numpy.random import rand
 from scipy.spatial import cKDTree # makes spatial searches much faster
 #from numba import njit
@@ -106,7 +106,7 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
             # at this point d is an empty array when x_possible is empty
             d = minimum(d,L_x-x_e) # If the final electrode is closer then jump there instead of a particle.
             resist_e +=  Rt * exp( d / lambda_) # add to the total path resistance
-            if d - (L_x-x_e) > 1e-15:
+            if abs(d - (L_x-x_e)) > 1e-15:
                 x_e, y_e = ( x_possible[ind], y_possible[ind]) # update the electron positions
             else: # d = L_x - x_e
                 x_e, y_e = ( L_x, 0.) # y_position doesn't matter at the end electrode
