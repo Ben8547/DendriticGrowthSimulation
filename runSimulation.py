@@ -39,7 +39,7 @@ def run_simulation(params, Hamaker, Visc):
         from viscosity_field import average_density
         from scipy.optimize import fsolve # need this otherwise we would have to appeal to the Lambert W function (probably - I didn't actually do the algebra to that point)
         a = params["alpha"] * params["V"]/ (0.5 * params["L_x"]) * 1e15# electric field acceleration
-        b = params["C_d"] * average_density# drag coeficient (x-component)
+        b = params["Cd"] * average_density# drag coeficient (x-component)
         c_2 = a/(b*b)
         c_1 = -c_2
         particularAndGeneralSolution = lambda t: c_1 + c_2 * exp(-b*t) + (a/b)*t

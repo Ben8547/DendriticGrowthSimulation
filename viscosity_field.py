@@ -89,7 +89,7 @@ desired_beta = lambda x: params["viscosity_multiplier"] * beta_curve(x/params['L
 def visc_dense_curve(x,a=2.5):
     return params["eta"] + a - (a/ (1+(x/params["L_x"]-0.5)**2) )
 
-average_density = quad(visc_dense_curve,0,params["L_x"]) / params['L_x']
+average_density = quad(visc_dense_curve,0,params["L_x"])[0] / params['L_x']
 
 
 #from numpy import zeros_like

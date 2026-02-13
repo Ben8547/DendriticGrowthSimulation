@@ -2,7 +2,7 @@ from numpy import array,hstack,vstack
 from launchSimulation import run
 
 
-gen_matrix = False
+gen_matrix = True
 gen_sims = True
 
 matrix_Ham = array([float(2**(2*i)) for i in range (3)],dtype=str) # 3

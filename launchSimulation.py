@@ -16,4 +16,5 @@ def run(Hamaker, Visc):
     print(f"State vector shape: {states.shape}")
 
 if __name__ == "__main__": # Only run the following code if this file is being run directly, not when it’s imported by another script
-    run(params['Hamaker Constant'],params['viscosity_multiplier'])
+    #run(params['Hamaker Constant'],params['viscosity_multiplier'])
+    run(1.,0.5)
