@@ -20,7 +20,7 @@ def run_simulation(params, Hamaker, Visc):
     I_saved.clear()
     t_saved.clear()'''
 
-    integrable_calcualte_forces = lambda t,x,out: calculate_forces(t,x,params,Hamaker,Visc,out) # this function only takes t and x so it can be used by an integrator
+    integrable_calcualte_forces = lambda t,x,out: calculate_forces(t,x,Hamaker,Visc,out) # this function only takes t and x so it can be used by an integrator
 
     random.seed(1)
 
@@ -42,7 +42,6 @@ def run_simulation(params, Hamaker, Visc):
         from scipy.optimize import fsolve # need this otherwise we would have to appeal to the Lambert W function (probably - I didn't actually do the algebra to that point)
         a = average(params["alpha"]) * params["V"]/ (0.5 * params["L_x"]) * 1e15# electric field acceleration
         b = params["Cd"] * average_density # drag coeficient (x-component)
-        #print(b)
         c_2 = a/(b*b)
         c_1 = -c_2
         particularAndGeneralSolution = lambda t: c_1 + c_2 * exp(-b*t) + (a/b)*t - Lx
@@ -184,40 +183,3 @@ def run_simulation(params, Hamaker, Visc):
     # now the file writer is closed
     print("Simulation complete.")
     return t, y # final time and state vector
-
-# these functions below are no longer in use
-"""def RKF45_step(t,initial,dt,err_tol=1e-3):
-
-    # Change in positions
-        initial_copy = copy(initial) # as to not mutate the original array
-        k1 = dt*integrable_calcualte_forces(t,initial_copy)
-        k2 = dt*integrable_calcualte_forces(t+0.25*dt, initial_copy + 0.25*k1)
-        k3 = dt*integrable_calcualte_forces(t+(3./8.)*dt, initial_copy+(3./32.)*k1 + (9./32.)*k2)
-        k4 = dt*integrable_calcualte_forces(t+(12./13.)*dt, initial_copy+(1932./2197.)*k1 + (7200./2197.)*k2 + (7296./2197.)*k3)
-        k5 = dt*integrable_calcualte_forces(t+dt, initial_copy + (439./216.) * k1 - 8.*k2 + (5380./513.)*k3 - (845./4104.)*k4)
-        k6 = dt*integrable_calcualte_forces(t + 0.5*dt, initial_copy - (8./27.)*k1 + 2.*k2 - (3544./2565.)*k3 + (1859./4104.)*k4 - (11./40.)*k5 )
-
-        rk4 = initial_copy + (25./216.)*k1 + (1408./2565.)*k3 + (2197./4104.)*k4 - 0.2*k5 # RK4 approx
-        rk5 =  initial_copy + (16./135.)*k1 + (6656./12825.)*k3 + (28561./56430.)*k4 - (9./50.)*k5 + (2./55.)*k6 # rk5 approx
-
-        scale = 1.#atol + rtol * np.maximum(np.abs(rk4), np.abs(rk5))
-        approx_err = linalg.norm((rk5 - rk4) / scale) / sqrt(len(initial)) # should help temper the size of the error 
-        ideal_step_size = dt*(err_tol*dt/approx_err/2)**(0.25) * 0.9 # 0.9 is a safetey factor; this sets the ideal time step for the next iteration
-
-        return rk5, approx_err, ideal_step_size
-
-def velocity_verlet_step(t,initial,n,time_step):
-    # Change in positions
-        initial_copy = copy(initial)
-        force_vec = integrable_calcualte_forces(t,initial)
-        initial_copy[0:n] += initial[n:(2*n)]*time_step + 0.5 * time_step**2 * force_vec[n:(2*n)] # change in x coordinate
-        initial_copy[(2*n):(3*n)] += initial[(3*n):(4*n)]*time_step + 0.5 * time_step**2 * force_vec[(3*n):(4*n)] # change in y coordinate
-
-        # change in velocities: need to compute acceleration at the next step
-        '''The below is not accurate because the force depends on velocity'''
-        force_vec_next = integrable_calcualte_forces(t,initial_copy) # actually accelerations, not forces, divided by eta technically because of the inclusion of the drag force, this is not exact, but it's hopefully close enough
-        initial_copy[n:(2*n)] += 0.5*(force_vec[n:(2*n)] + force_vec_next[n:(2*n)] )*time_step # change in x velocity
-        initial_copy[(3*n):(4*n)] += 0.5*(force_vec[(3*n):(4*n)] + force_vec_next[(3*n):(4*n)] )*time_step  # change in y velocity
-        initial_copy[4*n] += time_step * force_vec[4*n] # tempurature evolution
-
-        return initial_copy"""

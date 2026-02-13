@@ -48,6 +48,7 @@ def rk45(f, t0, y0, t_end, dt_initial,
             dt = t_end - t
 
         # --- Compute stages ---
+        #print(len(k1))
         f(t, y, k1) # this means output f(t,y) to the vector k1
 
         for i in range(n):

@@ -1,4 +1,4 @@
-from numpy import sqrt, column_stack, zeros, where, array, add, maximum, divide, copy, zeros_like, pi, any
+from numpy import sqrt, column_stack, zeros, where, array, add, maximum, copy, asarray, zeros_like, pi, any
 #from numpy import max as npmax
 from numpy.random import randint
 from defineParameters import params
@@ -18,7 +18,7 @@ rand_dirs_global_x, rand_dirs_global_y = None, None
 
 alpha = params["alpha"]
 
-def calculate_forces(t, states, params,Hamaker,Visc,dxdt):
+def calculate_forces(t, states, Hamaker, Visc, dxdt):
     """
     Python translation of MATLAB calculateForces.m
     Computes the time derivative dx/dt for all particle states.
@@ -43,10 +43,10 @@ def calculate_forces(t, states, params,Hamaker,Visc,dxdt):
     # ------------------------
     # Unpack state variables
     # ------------------------
-    x_p = states[0:n]
-    x_v = states[n:(2*n)]
-    y_p = states[(2*n):(3*n)]
-    y_v = states[(3*n):(4*n)]
+    x_p = asarray(states[0:n])
+    x_v = asarray(states[n:(2*n)])
+    y_p = asarray(states[(2*n):(3*n)])
+    y_v = asarray(states[(3*n):(4*n)])
     T = states[4*n] # temperature
 
     #----------------
@@ -75,21 +75,17 @@ def calculate_forces(t, states, params,Hamaker,Visc,dxdt):
     forces_x = Fa_x + Fd_x + Ft_x + F_vdWx # resultant force in the x direction
     forces_y = 0.   + Fd_y + Ft_y + F_vdWy  # resultant force in the y direction
 
-    print(len(states))
-    print(len(dxdt))
-    print(n)
-    print(4*n)
-
     # ------------------------
     # Solve for dx/dt
     # ------------------------
     # evolution in x direction
     #dxdt = zeros(4 * n + 1) # initialize the array of states vector derivatives (x here is not the x-direction, but the entire state vector)
-    dxdt[0:n] = x_v * fin_array
-    dxdt[n:(2*n)] = (forces_x / eta) * fin_array
+    dxdt[0:n] = (x_v * fin_array)#.tolist()
+    dxdt[n:(2*n)] = ((forces_x / eta) * fin_array)[0]#.tolist()
+
     #evolution in y direction
-    dxdt[(2*n):(3*n)] = y_v * fin_array
-    dxdt[(3*n):(4*n)] = (forces_y / eta) * fin_array
+    dxdt[(2*n):(3*n)] = (y_v * fin_array)#.tolist()
+    dxdt[(3*n):(4*n)] = ((forces_y / eta) * fin_array)[0]#.tolist()
     dxdt[4 * n] = (params["CT"] * params["Q"]) - params["k"] * (T - params["T_0"]) #temperature evolution
 
 
@@ -148,11 +144,6 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
             
             if  any(is_behind):
                 Fa_x[void_idx] = force_val[void_idx] # this is vectorized (incorrectly) below
-
-        '''cond = x_p[void_indices] < npmax(x_p[neighbors_list],axis=1) # should see if each particles x distance is less than the largest x-distance of its neighbors
-        is_behind = where( cond ,True,False)
-        print(is_behind)
-        Fa_x = where(inside & is_void & is_behind,force_val, zeros_like(force_val))'''
                     
         return Fa_x * 1e15 # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
 
