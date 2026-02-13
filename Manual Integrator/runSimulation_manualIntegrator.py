@@ -146,13 +146,13 @@ def run_simulation(params, Hamaker, Visc):
 
     with writer.saving(fig, f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{Visc}_vdW-{Hamaker}_Ly-{params["L_y"]}-{params['n']}particles-manualIntegrator"+'.mp4', dpi=50): # this enables streaming the simulation data to a file concurrent with the simualtion - enables an approximate 5x speed up
         # use scipy integrator
-        current_time_indicator = 1
+        y = initial
         times = [0.]
         for i_t in range(len(tspan)-1): # run the solver
             y, t = rk45(
             f=integrable_calcualte_forces,
             t0=tspan[i_t],
-            y0=initial,
+            y0=y,
             t_end=tspan[i_t+1],
             dt_initial= (tspan[1]-tspan[0])/2,
             rtol=params['rtol'],

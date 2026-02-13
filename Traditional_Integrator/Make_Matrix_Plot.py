@@ -6,7 +6,7 @@ gen_matrix = True
 gen_sims = True
 
 matrix_Ham = array([float(2**(2*i)) for i in range (3)],dtype=str) # 3
-matrix_viscMult = array([1., 0.5, 0.25],dtype=str) # 3
+matrix_viscMult = array([1., 1.5 , 2.],dtype=str) # 3
 
 if gen_sims:
     for i in range(3):
