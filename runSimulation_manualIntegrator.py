@@ -147,48 +147,42 @@ def run_simulation(params, Hamaker, Visc):
 
     with writer.saving(fig, f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{Visc}_vdW-{Hamaker}_Ly-{params["L_y"]}-{params['n']}particles-manualIntegrator"+'.mp4', dpi=50): # this enables streaming the simulation data to a file concurrent with the simualtion - enables an approximate 5x speed up
         # use scipy integrator
-        solver = rk45(
-        f=integrable_calcualte_forces,
-        t0=tspan[0],
-        y0=initial,
-        t_end=tspan[-1],
-        rtol=params['rtol'],
-        atol=params['atol'],
-        dt_max=min(tspan[1]-tspan[0]) # enables the animation frames to be evenly spaced
-        )
         current_time_indicator = 1
         times = [0.]
-        while solver.status == "running": # run the solver
-            solver.step() # one step
-            t = solver.t # current time
-            y = solver.y # current state vector
+        for i_t in range(len(tspan)-1): # run the solver
+            y, t = rk45(
+            f=integrable_calcualte_forces,
+            t0=tspan[i_t],
+            y0=initial,
+            t_end=tspan[i_t+1],
+            rtol=params['rtol'],
+            atol=params['atol'],
+            dt_max=min(tspan[1]-tspan[0]) # enables the animation frames to be evenly spaced
+            )
             # now that everything is updated, we need to stream this data into an animation file
-            if t >= tspan[current_time_indicator]: 
-                current_time_indicator += 1
-                particles.set_data(y[0:n], y[2*n:3*n])
-                # get the electric current data
-                if not params['is_Voltage_constant']: # set the voltage
-                    Volt = params["V_func"](t)
-                else:
-                    Volt = V
-                times.append(t) # add to time history
-                if Volt == 0.: current_histroy.append(0.) # this should save a lot of time
-                else:
-                    current_histroy.append(calculate_current(
-                    y[0:n], y[2*n:3*n], params["L_x"],params["L_y"], Volt,
-                    params["lambda"], params["Rt"], y[-1], params['num_e']#params["steps"], params["num_e"]
-                    ))
-                current_graph.set_data(times,current_histroy)
-                ax2.set_ylim(0.,max(current_histroy))
-                writer.grab_frame() # write the most recent frame to the file
-                print(f"time: {t}, current {current_histroy[-1]}") # debug tool
-        states = solver.y
-        t = solver.t
+            current_time_indicator += 1
+            particles.set_data(y[0:n], y[2*n:3*n])
+            # get the electric current data
+            if not params['is_Voltage_constant']: # set the voltage
+                Volt = params["V_func"](t)
+            else:
+                Volt = V
+            times.append(t) # add to time history
+            if Volt == 0.: current_histroy.append(0.) # this should save a lot of time
+            else:
+                current_histroy.append(calculate_current(
+                y[0:n], y[2*n:3*n], params["L_x"],params["L_y"], Volt,
+                params["lambda"], params["Rt"], y[-1], params['num_e']#params["steps"], params["num_e"]
+                ))
+            current_graph.set_data(times,current_histroy)
+            ax2.set_ylim(0.,max(current_histroy))
+            writer.grab_frame() # write the most recent frame to the file
+            print(f"time: {t}, current {current_histroy[-1]}") # debug tool
 
         # now we have completed the integration
     # now the file writer is closed
     print("Simulation complete.")
-    return t, states
+    return t, y # final time and state vector
 
 # these functions below are no longer in use
 """def RKF45_step(t,initial,dt,err_tol=1e-3):
