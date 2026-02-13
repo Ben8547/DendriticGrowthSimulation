@@ -31,7 +31,6 @@ def rk45(f, t0, y0, t_end, dt_initial,
     e5, e6, e7 = -17253/339200, 22/525, -1/40
 
     safety = 0.9
-    p = 5  # method order
 
     prev_err = 1.0
 

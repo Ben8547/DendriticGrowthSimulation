@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
 from defineParameters import params
 from ManualRK4 import rk45
-from calculateForces import calculate_forces, ind_func
+from calculateForces_new import calculate_forces, ind_func
 from viscosity_field import viscocity_gradient
 
 
@@ -20,7 +20,7 @@ def run_simulation(params, Hamaker, Visc):
     I_saved.clear()
     t_saved.clear()'''
 
-    integrable_calcualte_forces = lambda t,x: calculate_forces(t,x,params,Hamaker,Visc) # this function only takes t and x so it can be used by an integrator
+    integrable_calcualte_forces = lambda t,x,out: calculate_forces(t,x,params,Hamaker,Visc,out) # this function only takes t and x so it can be used by an integrator
 
     random.seed(1)
 
@@ -155,9 +155,10 @@ def run_simulation(params, Hamaker, Visc):
             t0=tspan[i_t],
             y0=initial,
             t_end=tspan[i_t+1],
+            dt_initial= (tspan[1]-tspan[0])/2,
             rtol=params['rtol'],
             atol=params['atol'],
-            dt_max=min(tspan[1]-tspan[0]) # enables the animation frames to be evenly spaced
+            dt_max=tspan[1]-tspan[0] # enables the animation frames to be evenly spaced
             )
             # now that everything is updated, we need to stream this data into an animation file
             current_time_indicator += 1
