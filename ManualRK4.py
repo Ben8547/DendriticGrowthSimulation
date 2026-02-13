@@ -9,7 +9,7 @@ def rk45(f, t0, y0, t_end, dt_initial,
     """
 
     n = len(y0)
-    y = y0[:]
+    y = y0[:] # copy of y0
     t = t0
     dt = dt_initial
 
@@ -48,7 +48,7 @@ def rk45(f, t0, y0, t_end, dt_initial,
             dt = t_end - t
 
         # --- Compute stages ---
-        f(t, y, k1)
+        f(t, y, k1) # this means output f(t,y) to the vector k1
 
         for i in range(n):
             y_temp[i] = y[i] + dt*a21*k1[i]
@@ -105,10 +105,6 @@ def rk45(f, t0, y0, t_end, dt_initial,
             factor = 5.0
 
         dt *= factor
-        if dt < dt_min:
-            dt = dt_min
-        elif dt > dt_max:
-            dt = dt_max
         prev_err = max(err_norm, 1e-16)
 
     return y, t # note; only returns the last iteration; this is an efficiency consideration since we are overwirting the inforation in each step of the loop.

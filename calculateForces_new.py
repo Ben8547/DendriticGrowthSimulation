@@ -58,30 +58,6 @@ def calculate_forces(t, states, params,Hamaker,Visc,dxdt):
 
     Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
 
-    '''# Identify indices of particles in a void
-    inside = (x_p < params['L_x'])
-    is_void = (ind_func(x_p, y_p) == 1)[0]
-    out_void = ~is_void
-
-    void_indices =  where(inside & is_void)[0] # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
-    
-    # query_ball_point finds all particles within radius 'r' for each void particle
-    neighbors_list = Tree.query_ball_point(coords[void_indices], r) # this returns an array of lists. The list in the ith element of the array contains the indicies of the points within a distance r of the ith particle
-
-    null_forces = [] # list of forces to set to zero (if they are positive) - structural implications
-
-    for i, void_idx in enumerate(void_indices): # ideally we would not appeal to a loop, but given how the code has been built thus far I cannot think of a way to avoid it.
-        # neighbors_list[i] contains indices of all particles within radius r
-        potential_neighbors =  neighbors_list[i] # neigbors of the ith particle
-        
-        # only care about neighbors that are strictly behind (smaller x). also exclude the particle itself (distance 0)
-        is_behind = x_p[potential_neighbors] < x_p[void_idx]
-
-        if any(is_behind) == True:  # if at least one neighbor is behind - accept the force, otherwise zero it
-            null_forces.append(void_idx) # add the index to a list of forces to set to zero (if they are positive)'''
-
-    #tree_data = (inside,is_void,out_void)
-
     # ------------------------
     # Forces
     # ------------------------
