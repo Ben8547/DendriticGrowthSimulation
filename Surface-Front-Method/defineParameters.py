@@ -44,7 +44,7 @@ params = { # create a dictionary to hold parameters
     # Simulation Length and Particle Count
     # --------------------------------
     
-    "n" : 500, #350, #500 # Number of particles
+    "n" : 250, #350, #500 # Number of particles
     "simulation_length" : 0.6, #6, # in seconds
 
 
@@ -131,7 +131,7 @@ params['R_pin'] = rand(params['m'],1) * 10. # Pinning potential distance
 params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from https://www.spiraxsarco.com/learn-about-steam/steam-engineering-principles-and-heat-transfer/heat-transfer
 
 #applied electric field parameters
-params['alpha'] = 1 +  rand(params['n']) * 1
+params['alpha'] = 2 +  rand(params['n']) * 2
 params['eps_0'] = 8.854e-12
 params["Average_particle_Radius"] = params["elec_transfer_radius"]/2. # since the particles must touch for electric transfer
 #params["Hamaker Constant"] = np.genfromtxt("Hamaker.txt",float) #6. #1. # van der Waals force constant - depends upon material

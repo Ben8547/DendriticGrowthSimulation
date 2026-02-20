@@ -1,4 +1,5 @@
 from numpy import sqrt, column_stack, zeros, where, array, add, maximum, divide, copy, zeros_like, pi, any
+import numpy as np
 #from numpy import max as npmax
 from numpy.random import randint
 from defineParameters import params
@@ -64,7 +65,7 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     # Forces
     # ------------------------
     Fa_x = applied_force(n, coords, Tree, params["alpha"], Volt, params["L_x"],t)
-    F_vdWx, F_vdWy = vdW_Force_AND_Dipole_Force(coords,Tree,A=Hamaker)
+    #F_vdWx, F_vdWy = vdW_Force_AND_Dipole_Force(coords,Tree,A=Hamaker)
     Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["Cd"], Visc)
     Ft_x, Ft_y = temperature_fluctuations(
         n, eta, params["T_coeff"], T, rand_dirs_global_x, rand_dirs_global_y
@@ -78,8 +79,8 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     fin_array = finishing_array(x_p, params["L_x"], params["fin"])
 
     # Total forces
-    forces_x = Fa_x + Fd_x + Ft_x + Fc_x + F_vdWx # resultant force in the x direction
-    forces_y = 0.   + Fd_y + Ft_y + Fc_y + F_vdWy  # resultant force in the y direction
+    forces_x = Fa_x + Fd_x + Ft_x + Fc_x# + F_vdWx # resultant force in the x direction
+    forces_y = 0.   + Fd_y + Ft_y + Fc_y# + F_vdWy  # resultant force in the y direction
     
     # ------------------------
     # Solve for dx/dt
@@ -99,18 +100,54 @@ def calculate_forces(t, states, params,Hamaker,Visc):
 # Subfunctions
 # -----------------------------------------------------
 
+def density_modulated_force(x, y, tree):
+
+    n = len(x)
+    coords = np.column_stack((x, y))
+
+    r_density = 10. * params["Average_particle_Radius"]
+    gamma = params["density_strength"]
+
+    # ----------------------------
+    # Compute local densities
+    # ----------------------------
+    density = np.zeros(n)
+
+    for i in range(n):
+        neighbors = tree.query_ball_point(coords[i], r_density)
+        density[i] = len(neighbors)
+
+    # ----------------------------
+    # Compute density gradient
+    # ----------------------------
+    density_grad = np.zeros(n)
+
+    # backward difference (since ordering preserved in y)
+    density_grad[1:] = density[1:] - density[:-1]
+    density_grad[0] = density_grad[1]
+
+    Force_modifier = (1 - gamma * density_grad)
+
+    # Clip to prevent negative runaway
+    Force_modifier = np.clip(Force_modifier, 0, None)
+
+    return Force_modifier
+
 def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
     # Initialize force to zero
+
     Fa_x = zeros(n)
 
     x_p = coords[:,0]
     y_p = coords[:,1]
 
+    modifier = density_modulated_force(x_p,y_p,kdTree)
+
     # Logical index of particles inside domain - prevents forward motion of particles outside of the bounded region
     inside = (x_p < Lx)
     is_void = (ind_func(x_p, y_p) == 1)[0]
 
-    if True: # Sam's orginal code; debug gate
+    if False: # Sam's orginal code; debug gate
         Fa_x[inside] = alpha[inside] * Volt / ((0.5) * Lx)
         return Fa_x * 1e15
 
@@ -155,7 +192,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
         print(is_behind)
         Fa_x = where(inside & is_void & is_behind,force_val, zeros_like(force_val))'''
                     
-        return Fa_x * 1e15 # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
+        return Fa_x * 1e15 * modifier # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
 
 def drag_force(x, y, x_v, y_v, Cd,Visc_mult):
 

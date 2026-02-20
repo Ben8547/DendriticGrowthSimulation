@@ -1,4 +1,4 @@
-from numpy import sqrt, column_stack, zeros, abs, append, ones
+from numpy import sqrt, column_stack, zeros, abs, append, ones, zeros_like
 #from numpy import max as npmax
 from numpy.random import randint
 from defineParameters import params
@@ -49,7 +49,7 @@ def calculate_forces(t, states, params, Visc):
     # ------------------------
     Fa_x = applied_force(coords, params["alpha"], Volt, params["L_x"])
     Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["Cd"], Visc)
-    F_ix = interaction_force(x_p,y_p)
+    F_ix = biharmonic_smoothing(x_p)
     # If the particle has reached the end, set the velocity to zero
     fin_array = finishing_array(x_p, params["L_x"], params["fin"])
 
@@ -127,6 +127,20 @@ def temperature_fluctuations(n, eta, T_coeff, T, rand_x, rand_y):
     Ft_x = rand_x * noise_scale
     Ft_y = rand_y * noise_scale
     return Ft_x/60., Ft_y/60. # scaled so that these forces are not dominant - they should be small relative to the other forces
+
+def biharmonic_smoothing(x, k4=params['spring']):
+
+    F = zeros_like(x)
+
+    F[2:-2] = -k4 * (
+        x[:-4]
+        - 4*x[1:-3]
+        + 6*x[2:-2]
+        - 4*x[3:-1]
+        + x[4:]
+    )
+
+    return F
 
 
 def finishing_array(x_p, L, fin):
