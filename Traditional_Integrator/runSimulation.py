@@ -1,10 +1,7 @@
 from numpy import random, zeros, meshgrid, linspace, concatenate, array, exp,average
-#from math import exp
-#from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
 from defineParameters import params
-#import imageio
 
 from calculateForces import calculate_forces, ind_func
 from viscosity_field import viscocity_gradient
