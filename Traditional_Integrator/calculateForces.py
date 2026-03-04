@@ -156,7 +156,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
         # only apply force to particle inside of a void
 
         #inside, is_void, out_void = treeData
-        void_indices =  where(inside & is_void)[0] # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
+        void_indices =  where(inside)[0] #& is_void # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
         
         '''
         This section deals in adding back a force to those particles inside of the void if there 
@@ -166,7 +166,8 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
         '''
         force_val = alpha * Volt / (0.5 * Lx)
 
-        Fa_x = where( inside & ~is_void ,force_val,0.) # set force not in void to the deisred value
+        #Fa_x = where( inside & ~is_void ,force_val,0.) # set force not in void to the deisred value
+        Fa_x = zeros_like(force_val)
 
         # Identify indices of particles in a void
         #void_indices =  where(inside & is_void)[0] # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
@@ -185,12 +186,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
     
             
             if  any(is_behind):
-                Fa_x[void_idx] = force_val[void_idx] # this is vectorized (incorrectly) below
-
-        '''cond = x_p[void_indices] < npmax(x_p[neighbors_list],axis=1) # should see if each particles x distance is less than the largest x-distance of its neighbors
-        is_behind = where( cond ,True,False)
-        print(is_behind)
-        Fa_x = where(inside & is_void & is_behind,force_val, zeros_like(force_val))'''
+                Fa_x[void_idx] = force_val[void_idx]
                     
         return Fa_x * 1e15 * modifier # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
 

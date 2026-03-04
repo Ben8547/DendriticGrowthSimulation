@@ -54,19 +54,6 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
         x1 = jnp.copy(x)
         y1 = jnp.copy(y) # this serves to convert the input numpy arrays into JAX arrays
 
-        #phi = np.zeros_like(x1)
-        '''for (cx, cy), A, s in zip(centers, amplitudes, sigmas):
-            phi += A * np.exp(-((x1 - cx)**2 + (y1 - cy)**2) / (2 * s**2))''' # pre JAX conversion
-        '''cx = centers[:, 0, jnp.newaxis, jnp.newaxis] # by embeding the arrays in a higher dimension, this creates a matrix when subtrated from the x1 vector. Thus we compute in a matrix and sum along a single axis of the matrix to get our resultant vector.
-        cy = centers[:, 1, jnp.newaxis, jnp.newaxis]
-        A = amplitudes[:, jnp.newaxis, jnp.newaxis]
-        s = sigmas[:, jnp.newaxis, jnp.newaxis]
-
-        # Calculate all Gaussians simultaneously: shape becomes (N, H, W)
-        phi_all = A * jnp.exp(-((x1 - cx)**2 + (y1 - cy)**2) / (2 * s**2))
-
-        # Sum across the N dimension (the individual blobs)
-        phi = jnp.sum(phi_all, axis=0)'''
         pts = jnp.stack([x1, y1], axis=-1)
         A = amplitudes[:, jnp.newaxis, jnp.newaxis]
         s = sigmas[:, jnp.newaxis, jnp.newaxis]
@@ -76,16 +63,12 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
         phi_all = A * jnp.exp(-r2 / (2 * s**2))
         phi = jnp.sum(phi_all, axis=0)
 
-        return (phi > threshold) # returns the Boolean value; True (1) at element i if point in element i is in the region
+        return jnp.zeros_like(x) # (phi > threshold) # returns the Boolean value; True (1) at element i if point in element i is in the region
     
     indicator = jax.jit(indicator) # turn function into a jax function - should speed up signifigantly
 
     return indicator
 
-'''def beta_curve(x,alpha,beta):
-    return x**(alpha-1) * (1-x)**(beta-1) * gamma(alpha+beta) / gamma(alpha) / gamma(beta)
-
-desired_beta = lambda x: params["viscosity_multiplier"] * beta_curve(x/params['L_x'],0.5,0.5) # inverse bell curve - low in middle - high at edges''' #This didn't work because it blew up at the edges
 def visc_dense_curve(x,a=2.5):
     return params["eta"] + a - (a/ (1+(x/params["L_x"]-0.5)**2) )
 
