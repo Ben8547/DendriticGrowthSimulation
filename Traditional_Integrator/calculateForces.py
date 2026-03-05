@@ -156,7 +156,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
         # only apply force to particle inside of a void
 
         #inside, is_void, out_void = treeData
-        void_indices =  where(inside)[0] #& is_void # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
+        void_indices =  where(inside & is_void)[0] #& is_void # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
         
         '''
         This section deals in adding back a force to those particles inside of the void if there 
