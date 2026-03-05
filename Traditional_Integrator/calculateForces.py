@@ -141,7 +141,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
     x_p = coords[:,0]
     y_p = coords[:,1]
 
-    modifier = density_modulated_force(x_p,y_p,kdTree)
+    modifier = 1. #density_modulated_force(x_p,y_p,kdTree)
 
     # Logical index of particles inside domain - prevents forward motion of particles outside of the bounded region
     inside = (x_p < Lx)

@@ -44,15 +44,15 @@ params = { # create a dictionary to hold parameters
     # Simulation Length and Particle Count
     # --------------------------------
     
-    "n" : 2000, #350, #500 # Number of particles
+    "n" : 1200, #350, #500 # Number of particles
     "simulation_length" : 0.6, #6, # in seconds
 
 
     #--------------------------------
     # Initial position box and material size
     #--------------------------------
-    'L_x' : 60,#60, #100, # Size of material in x-direction
-    'L_y' : 45, #100, # Size of material in y-direction
+    'L_x' : 60.,#60, #100, # Size of material in x-direction
+    'L_y' : 20.,#45, #100, # Size of material in y-direction
 
     #--------------------------------
     # Heat related parameters
@@ -108,7 +108,7 @@ params = { # create a dictionary to hold parameters
 # add to params
 
 # Applied force in void radius
-params["elec_transfer_radius"] = 1.*params["L_x"]/150. # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
+params["elec_transfer_radius"] = 0.85*params["L_x"]/150. # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
 
 # simulation parameters
 params['dt'] = params["simulation_length"]/100.  # Time step for simulation; originally 2000
