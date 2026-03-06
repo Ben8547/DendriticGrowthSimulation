@@ -108,7 +108,7 @@ params = { # create a dictionary to hold parameters
 # add to params
 
 # Applied force in void radius
-params["elec_transfer_radius"] = 0.85*params["L_x"]/150. # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
+params["elec_transfer_radius"] = 0.9*params["L_x"]/150. # we ahve the atomic radius of silver atoms stored, however this is a nanoparticle - many atoms. This parameter should be propotional to the particle size though because electric field should only be propagating to touching particles.
 
 # simulation parameters
 params['dt'] = params["simulation_length"]/100.  # Time step for simulation; originally 2000
@@ -141,7 +141,7 @@ params['Hamaker_Sample_Size'] = 10
 # Drag Force Parameters
 #--------------------------------
 
-params['eta'] = 2.5 #1 # viscosity
+params['eta'] = 1.#2.5 #1 # viscosity
 params["Cd"] = 50. # 1.8e4 # Drag Coefficient
 
 params["density_strength"] = .05
