@@ -4,11 +4,16 @@ import numpy as np
 from numpy.random import randint
 from defineParameters import params
 #from time import sleep # for debugging
-from viscosity_field import make_globular_indicator, viscocity_gradient
+from viscosity_field import make_globular_indicator, viscocity_gradient, Void_potential
 from scipy.spatial import cKDTree # makes spatial searches much faster
 
 
 ind_func = make_globular_indicator() # get a function to check viscocity state; index function of the void set
+''' We need a function that creates a potential preventing entry into the regions - as you enter the region - it needs to act like a hole in the simulation domain - a wall
+We could use some repelling force like 1/r or 1/r^2 but this might make the ODE stiff; we would also need to define the boundary of the region which is difficult. We could also we a very strong force field within the void, pointing outward but this would also
+potentially cause particles to be shot out of the void which is not realistic, we only want to prevent entry. Another idea is to create some point at the center of the void and have an exponentially decaying force field eminate from that point.
+Then we likely would not have the shooting motion, but we would not have such a clear barrier to entry.'''
+void_barrier_force = Void_potential(ind_func)
 
 r = params["elec_transfer_radius"]
 
@@ -70,6 +75,7 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     Ft_x, Ft_y = temperature_fluctuations(
         n, eta, params["T_coeff"], T, rand_dirs_global_x, rand_dirs_global_y
     )
+    F_barrier_x, F_barrier_y = void_potential(x_p,y_p)
 
 
     Fc_x = zeros(n) # initialize the contact forces
@@ -79,8 +85,8 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     fin_array = finishing_array(x_p, params["L_x"], params["fin"])
 
     # Total forces
-    forces_x = Fa_x + Fd_x + Ft_x + Fc_x# + F_vdWx # resultant force in the x direction
-    forces_y = 0.   + Fd_y + Ft_y + Fc_y# + F_vdWy  # resultant force in the y direction
+    forces_x = Fa_x + Fd_x + Ft_x + Fc_x + F_barrier_x# + F_vdWx # resultant force in the x direction
+    forces_y = 0.   + Fd_y + Ft_y + Fc_y + F_barrier_y# + F_vdWy  # resultant force in the y direction
     
     # ------------------------
     # Solve for dx/dt
@@ -199,6 +205,10 @@ def drag_force(x, y, x_v, y_v, Cd,Visc_mult):
 
     return Fd_x, Fd_y
 
+def void_potential(x,y):
+    #mask = ind_func(x,y) # 1 if inside the void, 0 if not
+    F_x, F_y = void_barrier_force(x,y)
+    return F_x, F_y
 
 
 def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"], A=1.):
@@ -254,10 +264,6 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     add.at(f_vdW_y, j, -Fy_vdW)
         
     return f_vdW_x, f_vdW_y
-
-def interfacial_force(n, x_p, y_p, wI, RI, Lx):
-    return 0. # I'm setting this force to zero becuase I can't think of physical force that would scale strictly off of distance like this 
-
 
 
 def pinning_force(n, x_p, y_p, w_pin, x_pin, y_pin, R_pin, Lx):

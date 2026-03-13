@@ -13,6 +13,7 @@ from scipy.special import gamma
 import jax
 import jax.numpy as jnp
 from scipy.integrate import quad
+import numpy as np
 
 
 def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params["n_regions"], blob_scale=params["blob_scale"], seed=params["seed"]):
@@ -63,7 +64,7 @@ def make_globular_indicator(Lx=params["L_x"], Ly=params["L_y"], n_regions=params
         phi_all = A * jnp.exp(-r2 / (2 * s**2))
         phi = jnp.sum(phi_all, axis=0)
 
-        return jnp.ones_like(x,dtype=int) # (phi > threshold) # returns the Boolean value; True (1) at element i if point in element i is in the region
+        return (phi > threshold) #jnp.ones_like(x,dtype=int) # (phi > threshold) # returns the Boolean value; True (1) at element i if point in element i is in the region
     
     indicator = jax.jit(indicator) # turn function into a jax function - should speed up signifigantly
 
@@ -86,10 +87,70 @@ def viscocity_gradient(x,y,indicator,Visc_mult):
     out[out_void_mask] = (params["eta"] * visc_dense_curve(x[out_void_mask]))
     out[~out_void_mask] = params["eta"]
     return out'''
-    mask = indicator(x, y)  # works for both grid and particles
+    #mask = indicator(x, y)  # works for both grid and particles
     density = visc_dense_curve(x)
 
-    return jnp.where(mask, Visc_mult*density, density ) # the visc mult now affects inside the void instead of outside
+    return density#jnp.where(mask, Visc_mult*density, density ) # the visc mult now affects inside the void instead of outside
+
+
+def void_borders(indicator, n = 170):
+    x = linspace(0,params["L_x"],n)
+    y = linspace(-params["L_y"]/2.,params["L_y"]/2.,n)
+    x,y = np.meshgrid(x,y)
+    Void = indicator(x,y)
+    Border = np.zeros((n,n),dtype=int)
+
+    center = Void[1:-1, 1:-1] == 1 # interior mask where Void == 1
+ 
+    neighbor_zero = ( # check 4-neighbor zeros
+        (Void[:-2, 1:-1] == 0) |   # up
+        (Void[2:, 1:-1] == 0)  |   # down
+        (Void[1:-1, :-2] == 0) |   # left
+        (Void[1:-1, 2:] == 0)      # right
+    )
+
+    mask = center & neighbor_zero # should give the same points as the loop; but much faster
+
+    Border = Border.at[1:-1, 1:-1].set(mask.astype(Border.dtype))
+    '''for i in range(n):
+        for j in range(n):
+            if Void[i,j]==1 and i not in (0, n-1) and j not in (0,n-1):
+                if Void[i-1,j] == 0 or Void[i+1,j] == 0 or Void[i,j-1] == 0 or Void[i, j-1] == 0:
+                    Border = Border.at[i,j].set(1)'''
+    
+    #print(Border)
+    #plt.imshow(Border)
+    #plt.colorbar()
+    #plt.show()
+
+    return Border
+
+def Void_potential(indicator, n=170):
+    Border = void_borders(indicator, n)
+    # now each point in the array set to 1 becomes a source of the force.
+    border_points = jnp.argwhere(Border == 1) # returns an nx2 array of integers - each row is an index
+    x_inds = border_points[:,0]
+    y_inds = border_points[:,1]
+    x_pos = x_inds * params["L_x"] / float(n)
+    y_pos = y_inds * params["L_y"] / float(n) - (params["L_y"]/2.)
+    x_pos = x_pos[:,None] # make 2D
+    y_pos = y_pos[:,None]
+    
+    
+    def potential(x,y):
+        x_copy = np.empty((n,n),dtype=np.float64)
+        y_copy = np.empty((n,n),dtype=np.float64)
+        x_copy[:,:] = x[None,:]
+        y_copy[:,:] = y[None,:] # fill the columns with the single value; vector fills the rows
+        F_x = params["Barrier_Potential"] * np.sum([(x - x_pos)/(np.sqrt((x - x_pos)**2 + (y - y_pos)**2))**3 for i in range(n) ], axis = 0) # sum the columns - results in a vector as
+        F_y = params["Barrier_Potential"] * np.sum([(y - y_pos)/(np.sqrt((x - x_pos)**2 + (y - y_pos)**2))**3 for i in range(n) ], axis = 0)
+
+        return F_x, F_y 
+        
+
+    return potential
+
+
 
 #viscocity_gradient = jax.jit(viscocity_gradient)
 
@@ -125,6 +186,10 @@ if __name__ == "__main__": # view the viscosity map if the script is run directl
     plt.imshow(Z)
     plt.colorbar()
     plt.show()
+
+    #void_borders(ind_func)
+    Void_potential(ind_func)
+
 
     if False: # plot beta dist
         rng1 = default_rng(1)

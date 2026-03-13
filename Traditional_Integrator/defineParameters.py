@@ -54,6 +54,8 @@ params = { # create a dictionary to hold parameters
     'L_x' : 60.,#60, #100, # Size of material in x-direction
     'L_y' : 20.,#45, #100, # Size of material in y-direction
 
+    "Barrier_Potential": 100.,
+
     #--------------------------------
     # Heat related parameters
     #--------------------------------
