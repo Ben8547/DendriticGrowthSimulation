@@ -94,11 +94,11 @@ def viscocity_gradient(x,y,indicator,Visc_mult):
 
 
 def void_borders(indicator, n = 170):
-    x = linspace(0,params["L_x"],n)
-    y = linspace(-params["L_y"]/2.,params["L_y"]/2.,n)
-    x,y = np.meshgrid(x,y)
+    x = jnp.linspace(0,params["L_x"],n)
+    y = jnp.linspace(-params["L_y"]/2.,params["L_y"]/2.,n)
+    x,y = jnp.meshgrid(x,y)
     Void = indicator(x,y)
-    Border = np.zeros((n,n),dtype=int)
+    Border = jnp.zeros((n,n),dtype=int)
 
     center = Void[1:-1, 1:-1] == 1 # interior mask where Void == 1
  
@@ -138,12 +138,12 @@ def Void_potential(indicator, n=170):
     
     
     def potential(x,y):
-        x_copy = np.empty((n,n),dtype=np.float64)
-        y_copy = np.empty((n,n),dtype=np.float64)
+        x_copy = np.empty((n,len(x)),dtype=np.float64)
+        y_copy = np.empty((n,len(y)),dtype=np.float64)
         x_copy[:,:] = x[None,:]
         y_copy[:,:] = y[None,:] # fill the columns with the single value; vector fills the rows
-        F_x = params["Barrier_Potential"] * np.sum([(x - x_pos)/(np.sqrt((x - x_pos)**2 + (y - y_pos)**2))**3 for i in range(n) ], axis = 0) # sum the columns - results in a vector as
-        F_y = params["Barrier_Potential"] * np.sum([(y - y_pos)/(np.sqrt((x - x_pos)**2 + (y - y_pos)**2))**3 for i in range(n) ], axis = 0)
+        F_x = params["Barrier_Potential"] * np.sum((x - x_pos)/(np.sqrt((x - x_pos)**2 + (y - y_pos)**2))**3, axis = 0) # sum the columns - results in a vector as
+        F_y = params["Barrier_Potential"] * np.sum((y - y_pos)/(np.sqrt((x - x_pos)**2 + (y - y_pos)**2))**3, axis = 0)
 
         return F_x, F_y 
         
