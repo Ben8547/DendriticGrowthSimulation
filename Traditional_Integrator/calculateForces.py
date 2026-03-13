@@ -85,8 +85,8 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     fin_array = finishing_array(x_p, params["L_x"], params["fin"])
 
     # Total forces
-    forces_x = Fa_x + Fd_x + Ft_x + Fc_x + F_barrier_x# + F_vdWx # resultant force in the x direction
-    forces_y = 0.   + Fd_y + Ft_y + Fc_y + F_barrier_y# + F_vdWy  # resultant force in the y direction
+    forces_x = Fa_x + Fd_x + Ft_x + Fc_x# + F_barrier_x# + F_vdWx # resultant force in the x direction
+    forces_y = 0.   + Fd_y + Ft_y + Fc_y# + F_barrier_y# + F_vdWy  # resultant force in the y direction
     
     # ------------------------
     # Solve for dx/dt

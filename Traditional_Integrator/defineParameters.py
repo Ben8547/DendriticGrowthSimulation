@@ -44,7 +44,7 @@ params = { # create a dictionary to hold parameters
     # Simulation Length and Particle Count
     # --------------------------------
     
-    "n" : 600,#1200, #350, #500 # Number of particles
+    "n" : 1200,#1200, #350, #500 # Number of particles
     "simulation_length" : 0.6, #6, # in seconds
 
 
@@ -54,7 +54,7 @@ params = { # create a dictionary to hold parameters
     'L_x' : 60.,#60, #100, # Size of material in x-direction
     'L_y' : 20.,#45, #100, # Size of material in y-direction
 
-    "Barrier_Potential": 100.,
+    "Barrier_Potential": 0.,
 
     #--------------------------------
     # Heat related parameters
