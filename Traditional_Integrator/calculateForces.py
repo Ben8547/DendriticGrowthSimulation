@@ -85,8 +85,8 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     fin_array = finishing_array(x_p, params["L_x"], params["fin"])
 
     # Total forces
-    forces_x = Fa_x + Fd_x + Ft_x + Fc_x# + F_barrier_x# + F_vdWx # resultant force in the x direction
-    forces_y = 0.   + Fd_y + Ft_y + Fc_y# + F_barrier_y# + F_vdWy  # resultant force in the y direction
+    forces_x = Fa_x + Fd_x + Ft_x + Fc_x + F_barrier_x# + F_vdWx # resultant force in the x direction
+    forces_y = 0.   + Fd_y + Ft_y + Fc_y + F_barrier_y# + F_vdWy  # resultant force in the y direction
     
     # ------------------------
     # Solve for dx/dt
@@ -147,7 +147,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
     x_p = coords[:,0]
     y_p = coords[:,1]
 
-    modifier = np.maximum(np.ones_like(x_p), density_modulated_force(x_p,y_p,kdTree)) #1.
+    modifier = 1.#np.maximum(np.ones_like(x_p), density_modulated_force(x_p,y_p,kdTree)) #1.
 
     # Logical index of particles inside domain - prevents forward motion of particles outside of the bounded region
     inside = (x_p < Lx)
@@ -162,7 +162,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
         # only apply force to particle inside of a void
 
         #inside, is_void, out_void = treeData
-        void_indices =  where(inside & is_void)[0] #& is_void # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
+        void_indices =  where(inside)[0] #& is_void)[0] #& is_void # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
         
         '''
         This section deals in adding back a force to those particles inside of the void if there 
@@ -183,7 +183,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
         #_, neighbors_list = kdTree.query(coords[void_indices], k=20, distance_upper_bound=r) # this gives a rectangluar array which is preffered for the below usage; max number of neighbors is 20
         #neighbors_list[neighbors_list == 350] = 0 # fix the padding
 
-        for i, void_idx in enumerate(void_indices):
+        '''for i, void_idx in enumerate(void_indices):
             # neighbors_list[i] contains indices of all particles within radius r
             potential_neighbors =  array(neighbors_list[i]) # neigbors of the ith particle
             
@@ -192,7 +192,8 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
     
             
             if  any(is_behind):
-                Fa_x[void_idx] = force_val[void_idx]
+                Fa_x[void_idx] = force_val[void_idx]'''
+        Fa_x[void_indices] = force_val[void_indices]
                     
         return Fa_x * 1e15 * modifier # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
 
