@@ -63,6 +63,7 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
     x_sort = x[x_sort_idx]
     y_sort = y[x_sort_idx] # sort both by the x indicies to preserve order
 
+    Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
     for e in range(num_e): #iterate over all simulated electrons
         prev_i = -1
         x_e, y_e = (e_position[0,e],e_position[1,e]) # initial electron position
@@ -100,7 +101,6 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
                 x_possible = x_sort[0:i]
                 y_possible = y_sort[0:i]
             coords = column_stack((x_possible, y_possible))
-            Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
             # find nearest particle in front of x_i
             d, ind = Tree.query([x_e,y_e]) # find closest point to (x_e,y_e) using the search tree
             # at this point d is an empty array when x_possible is empty
