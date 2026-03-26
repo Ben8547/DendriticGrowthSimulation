@@ -116,7 +116,7 @@ params["elec_transfer_radius"] = 0.9*params["L_x"]/150. # we ahve the atomic rad
 params['dt'] = params["simulation_length"]/100.  # Time step for simulation; originally 2000
 params["tspan"] = np.linspace(0, params["simulation_length"], 500) # Time span for simulation output
 
-# material and electrode dimensions
+# material and electrode x_pin
 params["electrode_width"] = params["L_x"] / 2 # Width of electrodes on material
 params["electrode_height"] = params["L_y"] # Height of electrodes on material
 
@@ -124,10 +124,10 @@ params["electrode_height"] = params["L_y"] # Height of electrodes on material
 params['wp_attract']= (-(rand(1,params['m']//2))*params['wpa_attract'] - params['wpa_attract']/2) # update the value from a scalar to an array
 params['wp_repulse']= ((rand(1,params['m']//2))*params['wpa_repulse'] + params['wpa_repulse']/2)
 params['w_pin'] = np.concatenate((params['wp_attract'], params['wp_repulse']), axis=None) # Combine attractive and repulsive pinning forces into one array
-params['x_pin'] = rand(params['m'],1) * params['L_x'] # Randomly distribute pinning sites in x-direction
-params['y_pin'] = rand(params['m'],1) * params['L_y'] - 0.5*params['L_y'] # Randomly distribute pinning sites in y-direction
+params['x_pin'] = (rand(params['m'],1) * params['L_x']).flatten() # Randomly distribute pinning sites in x-direction
+params['y_pin'] = (rand(params['m'],1) * params['L_y'] - 0.5*params['L_y']).flatten() # Randomly distribute pinning sites in y-direction
 #params['w_pin'] = 100 # Pinning potential amplitude
-params['R_pin'] = rand(params['m'],1) * 10. # Pinning potential distance
+params['R_pin'] = (rand(params['m'],1) * 10.).flatten() # Pinning potential distance
 
 # Jasons code?
 params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from https://www.spiraxsarco.com/learn-about-steam/steam-engineering-principles-and-heat-transfer/heat-transfer
