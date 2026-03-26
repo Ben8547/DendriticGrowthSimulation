@@ -69,13 +69,14 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     # ------------------------
     # Forces
     # ------------------------
-    Fa_x = applied_force(n, coords, Tree, params["alpha"], Volt, params["L_x"],t)
+    Fa_x = applied_force(n, coords, Tree, params["alpha"], Volt, params["L_x"],t, use_chain=False)
     #F_vdWx, F_vdWy = vdW_Force_AND_Dipole_Force(coords,Tree,A=Hamaker)
     Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["Cd"], Visc)
     Ft_x, Ft_y = temperature_fluctuations(
         n, eta, params["T_coeff"], T, rand_dirs_global_x, rand_dirs_global_y
     )
     F_barrier_x, F_barrier_y = void_potential(x_p,y_p)
+    F_pin_x, F_pin_y = pinning_force(x_p,y_p)
 
 
     Fc_x = zeros(n) # initialize the contact forces
@@ -85,8 +86,8 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     fin_array = finishing_array(x_p, params["L_x"], params["fin"])
 
     # Total forces
-    forces_x = Fa_x + Fd_x + Ft_x + Fc_x + F_barrier_x# + F_vdWx # resultant force in the x direction
-    forces_y = 0.   + Fd_y + Ft_y + Fc_y + F_barrier_y# + F_vdWy  # resultant force in the y direction
+    forces_x = Fa_x + Fd_x + Ft_x + Fc_x + F_barrier_x + F_pin_x# + F_vdWx # resultant force in the x direction
+    forces_y = 0.   + Fd_y + Ft_y + Fc_y + F_barrier_y + F_pin_y# + F_vdWy  # resultant force in the y direction
     
     # ------------------------
     # Solve for dx/dt
@@ -139,7 +140,7 @@ def density_modulated_force(x, y, tree):
 
     return Force_modifier
 
-def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
+def applied_force(n, coords, kdTree, alpha, V, Lx, t, use_chain = True): # (From Electric Field)
     # Initialize force to zero
 
     Fa_x = zeros(n)
@@ -153,7 +154,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t): # (From Electric Field)
     inside = (x_p < Lx)
     is_void = (ind_func(x_p, y_p) == 1)[0]
 
-    if False: # Sam's orginal code; debug gate
+    if not use_chain: # Sam's orginal code; debug gate
         Fa_x[inside] = alpha[inside] * Volt / ((0.5) * Lx)
         return Fa_x * 1e15
 
@@ -267,8 +268,25 @@ def vdW_Force_AND_Dipole_Force(coords, tree, R=params["Average_particle_Radius"]
     return f_vdW_x, f_vdW_y
 
 
-def pinning_force(n, x_p, y_p, w_pin, x_pin, y_pin, R_pin, Lx):
-    return 0., 0. # for simplicity (temporary) - on further consideration, the pinning potential is endemic to semiconductors, of which these memristor are not made of. Thus I fail t understand why we ever had a pinning potential.
+def pinning_force(x_p, y_p, w_pin=params['w_pin'], x_pin=params['x_pin'], y_pin=params['y_pin'], R_pin=params['R_pin']):
+    # Shapes for my reference:
+    # particles: (n, 1)
+    # pin sites: (1, m)
+    dx = x_p[:, None] - x_pin[None, :] # (n, m)
+    dy = y_p[:, None] - y_pin[None, :] # (n, m)
+
+    d2 = dx**2 + dy**2 # (n, m)
+
+    # Expand to (1, m) for vecotization purposes
+    w = w_pin[None, :]
+    R2 = (R_pin**2)[None, :]
+    F = (2 * w / R2) * np.exp(-d2 / R2)  # (n, m)
+
+    # sum
+    Fp_x = np.sum(F * dx, axis=1) # (n,)
+    Fp_y = np.sum(F * dy, axis=1) # (n,)
+
+    return Fp_x, Fp_y
 
 
 
