@@ -95,7 +95,7 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
                 Forward = True
             
             # find nearest particle in front of x_i
-            d, ind = Tree.query([x_e,y_e],k=10) # find the 10 closest points to (x_e,y_e) using the search tree
+            d, inds = Tree.query([x_e,y_e],k=10) # find the 10 closest points to (x_e,y_e) using the search tree
 
             if isscalar(inds):
                 inds = array([inds])
