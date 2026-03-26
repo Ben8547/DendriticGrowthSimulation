@@ -1,5 +1,5 @@
 from defineParameters import params
-from numpy import exp, ones, abs, argmin, max, minimum, isscalar, array, any, sqrt, argsort, column_stack, vstack, zeros, float32, searchsorted #tile, full, isnan, sqrt, min, nan, newaxis
+from numpy import exp, ones, abs, copy, max, minimum, argmin, sqrt, argsort, column_stack, vstack, zeros, float32, searchsorted #tile, full, isnan, sqrt, min, nan, newaxis
 from numpy.random import rand
 from scipy.spatial import cKDTree # makes spatial searches much faster
 #from numba import njit
@@ -63,9 +63,8 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
     x_sort = x[x_sort_idx]
     y_sort = y[x_sort_idx] # sort both by the x indicies to preserve order
 
-    coords = column_stack((x, y))
-    Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
     for e in range(num_e): #iterate over all simulated electrons
+        prev_i = -1
         x_e, y_e = (e_position[0,e],e_position[1,e]) # initial electron position
         resist_e = 0. # resitances along the path of a single electron
         while x_e < L_x: # while we have not reached the right electrode
@@ -94,43 +93,23 @@ def calculate_current(x, y, L_x, L_y, Volt, lambda_, Rt, T, num_e): # Ben's Mont
             if x_e <= 0.:
                 Forward = True
             
+            if Forward: # if moving forward
+                x_possible = x_sort[i+1:] # i+1 to avoind stationarity
+                y_possible = y_sort[i+1:]
+            else:
+                x_possible = x_sort[0:i]
+                y_possible = y_sort[0:i]
+            coords = column_stack((x_possible, y_possible))
+            Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
             # find nearest particle in front of x_i
-            dists, inds = Tree.query([x_e,y_e],k=10) # find the 10 closest points to (x_e,y_e) using the search tree
-
-            if isscalar(inds):
-                inds = array([inds])
-                dists = array([dists])
-
-            if Forward:
-                mask = x[inds] > x_e
-            else:
-                mask = x[inds] < x_e
-
-            if any(mask):
-                valid_inds = inds[mask]
-                valid_dists = dists[mask]
-            else:
-                # fallback: ignore direction
-                valid_inds = inds
-                valid_dists = dists
-            
-            j = argmin(valid_dists)
-            x_next = x[valid_inds[j]]
-            y_next = y[valid_inds[j]]
-            d = valid_dists[j]
-
-            """d = minimum(d,L_x-x_e) # If the final electrode is closer then jump there instead of a particle.
+            d, ind = Tree.query([x_e,y_e]) # find closest point to (x_e,y_e) using the search tree
+            # at this point d is an empty array when x_possible is empty
+            d = minimum(d,L_x-x_e) # If the final electrode is closer then jump there instead of a particle.
             resist_e +=  Rt * exp( d / lambda_) # add to the total path resistance
             if abs(d - (L_x-x_e)) > 1e-15:
-                x_e, y_e = ( x_possible, y_possible) # update the electron positions
+                x_e, y_e = ( x_possible[ind], y_possible[ind]) # update the electron positions
             else: # d = L_x - x_e
-                x_e, y_e = ( L_x, 0.) # y_position doesn't matter at the end electrode"""
-            d_electrode = L_x - x_e
-            if d_electrode < d:
-                d = d_electrode
-                x_e, y_e = L_x, 0.
-            else:
-                x_e, y_e = x_next, y_next
+                x_e, y_e = ( L_x, 0.) # y_position doesn't matter at the end electrode
 
             resist_e += Rt * exp(d / lambda_)
             # in the future I would like to make it so that this chooses between the three loswest values with some weight; for now the nearest neighbor model works
