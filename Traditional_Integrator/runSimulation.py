@@ -51,6 +51,8 @@ def run_simulation(params, Hamaker, Visc):
         print(f"anticipated {tspan[-1]} seconds to be simulated")
         tspan = linspace(tspan[0],tspan[-1],len(tspan))
 
+        tspan = linspace(tspan[0],0.771,len(tspan)) # manual control
+
     electrode_width = params["electrode_width"]
     electrode_height = params["electrode_height"]
 

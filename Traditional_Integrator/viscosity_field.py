@@ -88,7 +88,7 @@ def viscocity_gradient(x,y,indicator,Visc_mult):
     out[~out_void_mask] = params["eta"]
     return out'''
     #mask = indicator(x, y)  # works for both grid and particles
-    density = visc_dense_curve(x)
+    density = visc_dense_curve(x)*Visc_mult
 
     return density#jnp.where(mask, Visc_mult*density, density ) # the visc mult now affects inside the void instead of outside
 

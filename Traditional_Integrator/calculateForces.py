@@ -152,7 +152,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t, use_chain = True): # (From
 
     # Logical index of particles inside domain - prevents forward motion of particles outside of the bounded region
     inside = (x_p < Lx)
-    is_void = (ind_func(x_p, y_p) == 1)[0]
+    #is_void = (ind_func(x_p, y_p) == 1)[0]
 
     if not use_chain: # Sam's orginal code; debug gate
         Fa_x[inside] = alpha[inside] * Volt / ((0.5) * Lx)
@@ -184,7 +184,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t, use_chain = True): # (From
         #_, neighbors_list = kdTree.query(coords[void_indices], k=20, distance_upper_bound=r) # this gives a rectangluar array which is preffered for the below usage; max number of neighbors is 20
         #neighbors_list[neighbors_list == 350] = 0 # fix the padding
 
-        '''for i, void_idx in enumerate(void_indices):
+        for i, void_idx in enumerate(void_indices):
             # neighbors_list[i] contains indices of all particles within radius r
             potential_neighbors =  array(neighbors_list[i]) # neigbors of the ith particle
             
@@ -193,7 +193,7 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t, use_chain = True): # (From
     
             
             if  any(is_behind):
-                Fa_x[void_idx] = force_val[void_idx]'''
+                Fa_x[void_idx] = force_val[void_idx]
         Fa_x[void_indices] = force_val[void_indices]
                     
         return Fa_x * 1e15 * modifier # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
