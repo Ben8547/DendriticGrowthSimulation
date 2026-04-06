@@ -78,7 +78,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     
     "is_Voltage_constant" : False,
-    "V" : 6.,#3., # applies voltage
+    "V" : 1.,#6.,#3., # applies voltage
     "structual_in_force" : True, # If true, the structual impact of the voids is computed in the applied force, if true it is computed in the solver
 
     #--------------------------------
