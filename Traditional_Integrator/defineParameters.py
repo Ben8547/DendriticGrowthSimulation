@@ -44,14 +44,14 @@ params = { # create a dictionary to hold parameters
     # Simulation Length and Particle Count
     # --------------------------------
     
-    "n" : 700,#1200, #350, #500 # Number of particles
+    "n" : 1000,#700,#1200, #350, #500 # Number of particles
     "simulation_length" : 0.6, #6, # in seconds
 
 
     #--------------------------------
     # Initial position box and material size
     #--------------------------------
-    'L_x' : 60.,#60, #100, # Size of material in x-direction
+    'L_x' : 120.,#60, #100, # Size of material in x-direction
     'L_y' : 20.,#45, #100, # Size of material in y-direction
 
     "Barrier_Potential": 10.,
@@ -68,7 +68,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     # Pinning Force Parameters
     #--------------------------------
-    'm' : 100, # 100 # number of pinning sites
+    'm' : 1000, # 100 # number of pinning sites
     # Pinning Site Locations and Forces
     "wpa_repulse" : 200, #2000,
     "wpa_attract" : 1000, #500,
@@ -78,7 +78,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     
     "is_Voltage_constant" : False,
-    "V" : 1.,#6.,#3., # applies voltage
+    "V" : 6.,#6.,#3., # applies voltage
     "structual_in_force" : True, # If true, the structual impact of the voids is computed in the applied force, if true it is computed in the solver
 
     #--------------------------------
@@ -133,7 +133,7 @@ params['R_pin'] = (rand(params['m'],1) * 10.).flatten() # Pinning potential dist
 params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from https://www.spiraxsarco.com/learn-about-steam/steam-engineering-principles-and-heat-transfer/heat-transfer
 
 #applied electric field parameters
-params['alpha'] = rand(params['n']) * 5e-11  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
+params['alpha'] = (5e-11 + rand(params['n']) * 5e-11)/2.  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
 params['eps_0'] = 8.854e-12
 params["Average_particle_Radius"] = params["elec_transfer_radius"]/2. # since the particles must touch for electric transfer
 params["Hamaker Constant"] = np.genfromtxt("Hamaker.txt",float) #6. #1. # van der Waals force constant - depends upon material

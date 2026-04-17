@@ -1,4 +1,4 @@
-from numpy import random, zeros, meshgrid, linspace, concatenate, array, exp,average
+from numpy import random, zeros, meshgrid, linspace, concatenate, array, exp,average, zeros_like
 import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
 from defineParameters import params
@@ -51,7 +51,7 @@ def run_simulation(params, Hamaker, Visc):
         print(f"anticipated {tspan[-1]} seconds to be simulated")
         tspan = linspace(tspan[0],tspan[-1],len(tspan))
 
-        tspan = linspace(tspan[0],0.771,len(tspan)) # manual control
+        tspan = linspace(tspan[0],4.,len(tspan)) # manual control; 0.771
 
     electrode_width = params["electrode_width"]
     electrode_height = params["electrode_height"]
@@ -113,18 +113,52 @@ def run_simulation(params, Hamaker, Visc):
         color=(1.0, 0.8431, 0.0),
         alpha=0.3,
     )
+
+    view = "pinning"
+
     x = linspace(0.,params["L_x"],1000)
     y = linspace(-params["L_y"]/2.,params["L_y"]/2.,1000)
-
     X, Y = meshgrid(x,y)
 
-    Z = viscocity_gradient(X,Y,ind_func,Visc) #ind_func(X,Y)
-    #pcm = ax1.pcolormesh(X, Y, Z, cmap="pink", shading="auto", alpha=0.3)
-    pcm = ax1.pcolormesh(x, y, Z, cmap="pink", shading="auto", alpha=0.3)
+    if view == "density":
 
-    #ax1.imshow(Z)
-    plt.colorbar(pcm, ax=ax1,)
-    #pcm.set_clim(vmin=0.,vmax=params["eta"])
+        Z = viscocity_gradient(X,Y,ind_func,Visc) #ind_func(X,Y)
+        #pcm = ax1.pcolormesh(X, Y, Z, cmap="pink", shading="auto", alpha=0.3)
+        pcm = ax1.pcolormesh(x, y, Z, cmap="pink", shading="auto", alpha=0.3)
+
+        #ax1.imshow(Z)
+        plt.colorbar(pcm, ax=ax1,)
+        #pcm.set_clim(vmin=0.,vmax=params["eta"])
+    elif view == "pinning":
+        def compute_pinning_potential(X, Y, params):
+            x_pin = params['x_pin']
+            y_pin = params['y_pin']
+            w_pin = params['w_pin']
+            R_pin = params['R_pin']
+
+            U = zeros_like(X)
+
+            # Sum contributions from all pinning sites
+            for i in range(len(x_pin)):
+                dx = X - x_pin[i]
+                dy = Y - y_pin[i]
+                d2 = dx**2 + dy**2
+                U += w_pin[i] * exp(-d2 / (R_pin[i]**2))
+
+            return U
+
+        # Compute potential
+        U_pin = compute_pinning_potential(X, Y, params)
+
+        # Overlay (or replace viscosity plot if desired)
+        pcm_pin = ax1.pcolormesh(
+            x, y, U_pin,
+            cmap="coolwarm",
+            shading="auto",
+            alpha=0.4
+        )
+        
+        #plt.colorbar(pcm_pin, ax=ax1, label="Pinning Potential")
 
     particles, = ax1.plot(initial[0:n], initial[2*n : 3*n], "b.", markersize=2) # this is the artist to be updated
 
