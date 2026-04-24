@@ -71,7 +71,7 @@ params = { # create a dictionary to hold parameters
     'm' : 100, # 100 # number of pinning sites
     # Pinning Site Locations and Forces
     "wpa_repulse" : 200.,#200, #2000,
-    "wpa_attract" : 1000.,#1000, #500,
+    "wpa_attract" : 1000000.,#1000, #500,
 
     #--------------------------------
     # Applied Electric Field Parameters
