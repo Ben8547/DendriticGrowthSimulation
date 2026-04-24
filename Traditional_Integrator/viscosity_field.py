@@ -145,6 +145,9 @@ def Void_potential(indicator, n=170):
         F_x = params["Barrier_Potential"] * np.sum((x - x_pos)/(np.sqrt((x - x_pos)**2 + (y - y_pos)**2))**3, axis = 0) # sum the columns - results in a vector as
         F_y = params["Barrier_Potential"] * np.sum((y - y_pos)/(np.sqrt((x - x_pos)**2 + (y - y_pos)**2))**3, axis = 0)
 
+        #F_x = np.zeros_like(F_x) # testing only
+        #F_y = np.zeros_like(F_y)
+
         return F_x, F_y 
         
 
