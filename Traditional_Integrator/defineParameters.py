@@ -70,8 +70,8 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     'm' : 100, # 100 # number of pinning sites
     # Pinning Site Locations and Forces
-    "wpa_repulse" : 0.,#200, #2000,
-    "wpa_attract" : 0.,#1000, #500,
+    "wpa_repulse" : 100.,#200, #2000,
+    "wpa_attract" : 500.,#1000, #500,
 
     #--------------------------------
     # Applied Electric Field Parameters
@@ -95,7 +95,7 @@ params = { # create a dictionary to hold parameters
     #-----------------------------------
     # Stress induced void map parameters
     #-----------------------------------
-    'n_regions': 500,
+    'n_regions': 0, # 1000
     'blob_scale': 0.05, #0.08
     'num_lattice_points': int(1e6),
     "angle" : np.pi/2, # angle of the sector from which the electric field may be transmitted
