@@ -18,6 +18,8 @@ def run_simulation(params, Hamaker, Visc):
     I_saved.clear()
     t_saved.clear()'''
 
+    voltage_hist = [0.]
+
     integrable_calcualte_forces = lambda t,x: calculate_forces(t,x,params,Hamaker,Visc) # this function only takes t and x so it can be used by an integrator
 
     random.seed(1)
@@ -51,7 +53,7 @@ def run_simulation(params, Hamaker, Visc):
         print(f"anticipated {tspan[-1]} seconds to be simulated")
         tspan = linspace(tspan[0],tspan[-1],len(tspan))
 
-        tspan = linspace(tspan[0],4.,len(tspan)) # manual control; 0.771
+        tspan = linspace(tspan[0],16.,len(tspan)) # manual control; 0.771
 
     electrode_width = params["electrode_width"]
     electrode_height = params["electrode_height"]
@@ -205,7 +207,8 @@ def run_simulation(params, Hamaker, Visc):
                 void_indices = where(inside & is_void)[0]
                 # The idea is that particles should not be able to move forward in a void if there are no particles behind them - to mimmic this we zero the momenta here'''
             # now that everything is updated, we need to stream this data into an animation file
-            if t >= tspan[current_time_indicator]: 
+            while ( current_time_indicator < len(tspan)
+                    and t >= tspan[current_time_indicator]): # changed from if to allow catch up if a jump is too large
                 current_time_indicator += 1
                 particles.set_data(y[0:n], y[2*n:3*n])
                 # get the electric current data
@@ -216,21 +219,22 @@ def run_simulation(params, Hamaker, Visc):
                 times.append(t) # add to time history
                 if Volt == 0.: current_histroy.append(0.) # this should save a lot of time
                 else:
-                    current_histroy.append(calculate_current(
-                    y[0:n], y[2*n:3*n], params["L_x"],params["L_y"], Volt,
+                    current_histroy.append(Volt/abs(Volt) * calculate_current(
+                    y[0:n], y[2*n:3*n], params["L_x"],params["L_y"], abs(Volt),
                     params["lambda"], params["Rt"], y[-1], params['num_e']#params["steps"], params["num_e"]
                     ))
                 current_graph.set_data(times,current_histroy)
                 ax2.set_ylim(0.,max(current_histroy))
                 writer.grab_frame() # write the most recent frame to the file
                 print(f"time: {t}, current {current_histroy[-1]}") # debug tool
+                voltage_hist.append(Volt)
         states = solver.y
         t = solver.t
 
         # now we have completed the integration
     # now the file writer is closed
     print("Simulation complete.")
-    return t, states
+    return t, states, times, current_histroy, voltage_hist
 
 # these functions below are no longer in use
 """def RKF45_step(t,initial,dt,err_tol=1e-3):

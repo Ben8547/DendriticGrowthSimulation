@@ -70,7 +70,7 @@ params = { # create a dictionary to hold parameters
     #--------------------------------
     'm' : 100, # 100 # number of pinning sites
     # Pinning Site Locations and Forces
-    "wpa_repulse" : 100.,#200, #2000,
+    "wpa_repulse" : 200.,#200, #2000,
     "wpa_attract" : 500.,#1000, #500,
 
     #--------------------------------
@@ -95,7 +95,7 @@ params = { # create a dictionary to hold parameters
     #-----------------------------------
     # Stress induced void map parameters
     #-----------------------------------
-    'n_regions': 0, # 1000
+    'n_regions': 1000, # 1000
     'blob_scale': 0.05, #0.08
     'num_lattice_points': int(1e6),
     "angle" : np.pi/2, # angle of the sector from which the electric field may be transmitted
@@ -170,13 +170,42 @@ params['steps'] = 120
 # Voltage function
 #--------------------------------
 if not params['is_Voltage_constant']:
-    def voltage(t):
+    def voltage_mono_direction(t):
         time = t % 2e-2 # period of 2 centi seconds
         if time > 1e-2: # 0 until 1e-2 s and then V onwards; repeats from 2e-2 s
             return params["V"]
         else: 
             return 0
-    params["V_func"] = voltage
+        
+    def voltage_reverseable(t):
+        time  = t % 2e-2
+        reversal_time = 3.7 # 3.7
+        if time > 1e-2 and t < reversal_time:
+            return params["V"]
+        elif time > 1e-2 and t >= reversal_time:
+            return -params["V"]
+        else:
+            return 0
+    # voltage sweep parameters    
+    end_volt = 6.
+    start_volt = 0.
+    increment = 0.1 # increment of the voltage per step
+    time = 8. # half of the simulated time - time to get to peak voltage
+    num_increments = int(np.ceil((end_volt-start_volt) / increment))
+    step_time = time / num_increments
+    sweep_dict = {i: start_volt + i*(end_volt - start_volt)/num_increments for i in range(num_increments)}
+
+    def voltage_sweep(t):
+        if t <= time:
+            current_step = min(np.ceil(t / step_time), num_increments-1)
+            return sweep_dict[current_step]
+        else:
+            current_step = min(2*num_increments - np.ceil( t / step_time ), num_increments-1)
+            return sweep_dict[current_step]
+        
+
+        
+    params["V_func"] = voltage_sweep
 
 #--------------------------------
 # File Settings
@@ -190,7 +219,7 @@ params["seed"] = s
 if __name__ == "__main__": # graph the voltage
     if not params["is_Voltage_constant"]:
         import matplotlib.pyplot as plt
-        times = np.linspace(0,5e-1,1000)
+        times = np.linspace(0,16,1000)
         voltages = [ params["V_func"](t) for t in times ]
         plt.plot(times,voltages)
         plt.title("The Voltage Pulses")
