@@ -186,11 +186,12 @@ if not params['is_Voltage_constant']:
             return -params["V"]
         else:
             return 0
+        
     # voltage sweep parameters    
-    end_volt = 6.
+    end_volt = 4.
     start_volt = 0.
-    increment = 0.1 # increment of the voltage per step
-    time = 8. # half of the simulated time - time to get to peak voltage
+    increment = 0.75 # increment of the voltage per step
+    time = 5. # half of the simulated time - time to get to peak voltage
     num_increments = int(np.ceil((end_volt-start_volt) / increment))
     step_time = time / num_increments
     sweep_dict = {i: start_volt + i*(end_volt - start_volt)/num_increments for i in range(num_increments)}
@@ -219,7 +220,7 @@ params["seed"] = s
 if __name__ == "__main__": # graph the voltage
     if not params["is_Voltage_constant"]:
         import matplotlib.pyplot as plt
-        times = np.linspace(0,16,1000)
+        times = np.linspace(0,10,1000)
         voltages = [ params["V_func"](t) for t in times ]
         plt.plot(times,voltages)
         plt.title("The Voltage Pulses")
