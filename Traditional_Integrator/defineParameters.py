@@ -71,7 +71,7 @@ params = { # create a dictionary to hold parameters
     'm' : 100, # 100 # number of pinning sites
     # Pinning Site Locations and Forces
     "wpa_repulse" : 200.,#200, #2000,
-    "wpa_attract" : 500.,#1000, #500,
+    "wpa_attract" : 5000.,#1000, #500,
 
     #--------------------------------
     # Applied Electric Field Parameters
@@ -188,7 +188,7 @@ if not params['is_Voltage_constant']:
             return 0
         
     # voltage sweep parameters    
-    end_volt = 4.
+    end_volt = 3.
     start_volt = 0.
     increment = 0.75 # increment of the voltage per step
     time = 5. # half of the simulated time - time to get to peak voltage
@@ -204,9 +204,13 @@ if not params['is_Voltage_constant']:
             current_step = min(2*num_increments - np.ceil( t / step_time ), num_increments-1)
             return sweep_dict[current_step]
         
+    
+    def low_voltage(t):
+        return 10.
+        
 
         
-    params["V_func"] = voltage_sweep
+    params["V_func"] = low_voltage
 
 #--------------------------------
 # File Settings

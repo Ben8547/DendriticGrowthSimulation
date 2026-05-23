@@ -24,7 +24,7 @@ rand_dirs_global_x, rand_dirs_global_y = None, None
 
 alpha = params["alpha"]
 
-def calculate_forces(t, states, params,Hamaker,Visc):
+def calculate_forces(t, states, params,Hamaker,Visc,V_func = params["V_func"]):
     """
     Python translation of MATLAB calculateForces.m
     Computes the time derivative dx/dt for all particle states.
@@ -34,7 +34,7 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     global rand_dirs_global_x, rand_dirs_global_y # these being global variables is a remnant of the matlab code. I don't think they are needed, but I don't want to mess anything up my removing them.
 
     if not params['is_Voltage_constant']:
-        Volt = params["V_func"](t)
+        Volt = V_func(t)
     else:
         Volt = V
 
@@ -78,9 +78,11 @@ def calculate_forces(t, states, params,Hamaker,Visc):
     F_barrier_x, F_barrier_y = void_potential(x_p,y_p)
     F_pin_x, F_pin_y = pinning_force(x_p,y_p)
 
-
-    Fc_x = zeros(n) # initialize the contact forces
-    Fc_y = zeros(n)
+    if True: # switch the L-ennard-Jones potential on or off
+        Fc_x = zeros(n) # initialize the contact forces
+        Fc_y = zeros(n)
+    else:
+        Fc_x, Fc_y = vdW_Force_AND_Dipole_Force(coords,Tree)
 
     # If the particle has reached the end, set the velocity to zero
     fin_array = finishing_array(x_p, params["L_x"], params["fin"])
