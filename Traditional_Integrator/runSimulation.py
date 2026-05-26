@@ -20,7 +20,9 @@ def run_simulation(params, Hamaker, Visc):
 
     voltage_hist = [0.]
 
-    integrable_calcualte_forces = lambda t,x: calculate_forces(t,x,params,Hamaker,Visc) # this function only takes t and x so it can be used by an integrator
+    current_resist = 1.
+
+    integrable_calcualte_forces = lambda t,x: calculate_forces(t,x,params,Hamaker,Visc, resist=current_resist) # this function only takes t and x so it can be used by an integrator
 
     random.seed(1)
 
@@ -219,10 +221,12 @@ def run_simulation(params, Hamaker, Visc):
                 times.append(t) # add to time history
                 if Volt == 0.: current_histroy.append(0.) # this should save a lot of time
                 else:
-                    current_histroy.append(Volt/abs(Volt) * calculate_current(
+                    current = calculate_current(
                     y[0:n], y[2*n:3*n], params["L_x"],params["L_y"], abs(Volt),
                     params["lambda"], params["Rt"], y[-1], params['num_e']#params["steps"], params["num_e"]
-                    ))
+                    )
+                    current_resist = Volt/current
+                    current_histroy.append(Volt/abs(Volt) * current)
                 current_graph.set_data(times,current_histroy)
                 ax2.set_ylim(0.,max(current_histroy))
                 writer.grab_frame() # write the most recent frame to the file

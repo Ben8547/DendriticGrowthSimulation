@@ -24,7 +24,7 @@ rand_dirs_global_x, rand_dirs_global_y = None, None
 
 alpha = params["alpha"]
 
-def calculate_forces(t, states, params,Hamaker,Visc,V_func = params["V_func"]):
+def calculate_forces(t, states, params,Hamaker,Visc,V_func = params["V_func"], resist=1.):
     """
     Python translation of MATLAB calculateForces.m
     Computes the time derivative dx/dt for all particle states.
@@ -101,7 +101,7 @@ def calculate_forces(t, states, params,Hamaker,Visc,V_func = params["V_func"]):
     #evolution in y direction
     dxdt[(2*n):(3*n)] = y_v * fin_array
     dxdt[(3*n):(4*n)] = (forces_y / eta) * fin_array
-    dxdt[4 * n] = (params["CT"] * params["Q"]) - params["k"] * (T - params["T_0"]) #temperature evolution
+    dxdt[4 * n] = (params["CT"] * V**2 / resist ) - params["k"] * (T - params["T_0"]) #temperature evolution
     return dxdt
 
 
