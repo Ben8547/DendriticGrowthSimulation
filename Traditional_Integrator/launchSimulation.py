@@ -34,4 +34,4 @@ def run(Hamaker, Visc, lissajous = False):
 
 if __name__ == "__main__": # Only run the following code if this file is being run directly, not when it’s imported by another script
     #run(params['Hamaker Constant'],params['viscosity_multiplier'])
-    run(1e0,1.,lissajous=True)
+    run(1e0,1.,lissajous=False)

@@ -1,13 +1,13 @@
-from numpy import random, zeros, meshgrid, linspace, concatenate, array, exp, average, zeros_like
+from numpy import random, zeros, meshgrid, linspace, concatenate, array, exp, average, zeros_like, savetxt
 import matplotlib.pyplot as plt
 from matplotlib.animation import PillowWriter, FuncAnimation
 from defineParameters import params
-
-from calculateForces import calculate_forces, ind_func
+from viscosity_field import make_globular_indicator
+from calculateForces import calculate_forces
 from viscosity_field import viscocity_gradient
 
 
-def run_simulation(params, Hamaker, Visc):
+def run_simulation(params, wpa, numVoids):
     """
     Translated from MATLAB runSimulation.m
     Runs the full dendritic growth simulation with visualization and GIF output.
@@ -22,7 +22,11 @@ def run_simulation(params, Hamaker, Visc):
 
     current_resist = 1.
 
-    integrable_calcualte_forces = lambda t,x: calculate_forces(t,x,params,Hamaker,Visc, resist=current_resist) # this function only takes t and x so it can be used by an integrator
+    ind_func = make_globular_indicator(numVoids) # get a function to check viscocity state; index function of the void set
+
+    WPA = concatenate((params['wp_attract'], params['wp_repulse']), axis=None)
+
+    integrable_calcualte_forces = lambda t,x: calculate_forces(t,x,params, WPA, ind_func, resist=current_resist) # this function only takes t and x so it can be used by an integrator
 
     random.seed(1)
 
@@ -164,19 +168,8 @@ def run_simulation(params, Hamaker, Visc):
         
         #plt.colorbar(pcm_pin, ax=ax1, label="Pinning Potential")
 
-    particles, = ax1.plot(initial[0:n], initial[2*n : 3*n], "b.", markersize=2) # this is the artist to be updated
-
-    # graph the current
 
     current_histroy = [0.] # initialize the current history
-
-    current_graph, = ax2.plot([0.], current_histroy)
-    ax2.set_ylim(0.,2e-4)
-    ax2.set_xlim(0.,tspan[-1])
-    ax2.set_ylabel("Current I")
-    ax2.set_xlabel("Time")
-    ax2.grid(True)
-
 
     # now run the simulation
     from calculateCurrent import calculate_current
@@ -201,18 +194,12 @@ def run_simulation(params, Hamaker, Visc):
             solver.step() # one step
             t = solver.t # current time
             y = solver.y # current state vector
-            '''if not params['structual_in_force']: # zero out forward momentum in the voids if no particles are behind - forward movement cannot be supported in the void without existing protrusion
-                x_p = y[0:n]
-                y_p = y[2*n:3*n]
-                inside = (x_p < Lx)
-                is_void = (ind_func(x_p, y_p) == 1)[0]
-                void_indices = where(inside & is_void)[0]
-                # The idea is that particles should not be able to move forward in a void if there are no particles behind them - to mimmic this we zero the momenta here'''
+            
             # now that everything is updated, we need to stream this data into an animation file
             while ( current_time_indicator < len(tspan)
                     and t >= tspan[current_time_indicator]): # changed from if to allow catch up if a jump is too large
                 current_time_indicator += 1
-                particles.set_data(y[0:n], y[2*n:3*n])
+                #particles.set_data(y[0:n], y[2*n:3*n])
                 # get the electric current data
                 if not params['is_Voltage_constant']: # set the voltage
                     Volt = params["V_func"](t)
@@ -227,9 +214,8 @@ def run_simulation(params, Hamaker, Visc):
                     )
                     current_resist = Volt/current
                     current_histroy.append(Volt/abs(Volt) * current)
-                current_graph.set_data(times,current_histroy)
-                ax2.set_ylim(0.,max(current_histroy))
-                writer.grab_frame() # write the most recent frame to the file
+                #current_graph.set_data(times,current_histroy)
+                #writer.grab_frame() # write the most recent frame to the file
                 print(f"time: {t}, current {current_histroy[-1]}") # debug tool
                 voltage_hist.append(Volt)
         states = solver.y
@@ -237,42 +223,18 @@ def run_simulation(params, Hamaker, Visc):
 
         # now we have completed the integration
     # now the file writer is closed
+    #savetxt(f"TIMES-m={params['m']}-pin={wpa}-eta={params['eta']}-V={params['V']}-lambda={params['lambda']}"+".csv",t)
+    #savetxt(f"STATES-m={params['m']}-pin={wpa}-eta={params['eta']}-V={params['V']}-lambda={params['lambda']}"+".csv",states)
+    #savetxt(f"Current-m={params['m']}-pin={params['wpa_attract']}-eta={params['eta']}-V={params['V']}-lambda={params['lambda']}"+".csv",current_histroy)
+    #savetxt(f"voltage-m={params['m']}-pin={params['wpa_attract']}-eta={params['eta']}-V={params['V']}-lambda={params['lambda']}"+".csv",voltage_hist)
+    particles, = ax1.plot(initial[0:n], initial[2*n : 3*n], "b.", markersize=2) # this is the artist to be updated
+    current_graph, = ax2.plot(voltage_hist, current_histroy)
+    ax2.set_xlim(0.,tspan[-1])
+    ax2.set_ylabel("Current I")
+    ax2.set_xlabel("Time")
+    ax2.grid(True)
+    #ax2.set_ylim(0.,max(current_histroy))
+    fig.savefig(f"STATES-m={params['m']}-pin={wpa}-eta={params['eta']}-V={params['V']}-lambda={params['lambda']}"+".png")
     print("Simulation complete.")
     return t, states, times, current_histroy, voltage_hist
 
-# these functions below are no longer in use
-"""def RKF45_step(t,initial,dt,err_tol=1e-3):
-
-    # Change in positions
-        initial_copy = copy(initial) # as to not mutate the original array
-        k1 = dt*integrable_calcualte_forces(t,initial_copy)
-        k2 = dt*integrable_calcualte_forces(t+0.25*dt, initial_copy + 0.25*k1)
-        k3 = dt*integrable_calcualte_forces(t+(3./8.)*dt, initial_copy+(3./32.)*k1 + (9./32.)*k2)
-        k4 = dt*integrable_calcualte_forces(t+(12./13.)*dt, initial_copy+(1932./2197.)*k1 + (7200./2197.)*k2 + (7296./2197.)*k3)
-        k5 = dt*integrable_calcualte_forces(t+dt, initial_copy + (439./216.) * k1 - 8.*k2 + (5380./513.)*k3 - (845./4104.)*k4)
-        k6 = dt*integrable_calcualte_forces(t + 0.5*dt, initial_copy - (8./27.)*k1 + 2.*k2 - (3544./2565.)*k3 + (1859./4104.)*k4 - (11./40.)*k5 )
-
-        rk4 = initial_copy + (25./216.)*k1 + (1408./2565.)*k3 + (2197./4104.)*k4 - 0.2*k5 # RK4 approx
-        rk5 =  initial_copy + (16./135.)*k1 + (6656./12825.)*k3 + (28561./56430.)*k4 - (9./50.)*k5 + (2./55.)*k6 # rk5 approx
-
-        scale = 1.#atol + rtol * np.maximum(np.abs(rk4), np.abs(rk5))
-        approx_err = linalg.norm((rk5 - rk4) / scale) / sqrt(len(initial)) # should help temper the size of the error 
-        ideal_step_size = dt*(err_tol*dt/approx_err/2)**(0.25) * 0.9 # 0.9 is a safetey factor; this sets the ideal time step for the next iteration
-
-        return rk5, approx_err, ideal_step_size
-
-def velocity_verlet_step(t,initial,n,time_step):
-    # Change in positions
-        initial_copy = copy(initial)
-        force_vec = integrable_calcualte_forces(t,initial)
-        initial_copy[0:n] += initial[n:(2*n)]*time_step + 0.5 * time_step**2 * force_vec[n:(2*n)] # change in x coordinate
-        initial_copy[(2*n):(3*n)] += initial[(3*n):(4*n)]*time_step + 0.5 * time_step**2 * force_vec[(3*n):(4*n)] # change in y coordinate
-
-        # change in velocities: need to compute acceleration at the next step
-        '''The below is not accurate because the force depends on velocity'''
-        force_vec_next = integrable_calcualte_forces(t,initial_copy) # actually accelerations, not forces, divided by eta technically because of the inclusion of the drag force, this is not exact, but it's hopefully close enough
-        initial_copy[n:(2*n)] += 0.5*(force_vec[n:(2*n)] + force_vec_next[n:(2*n)] )*time_step # change in x velocity
-        initial_copy[(3*n):(4*n)] += 0.5*(force_vec[(3*n):(4*n)] + force_vec_next[(3*n):(4*n)] )*time_step  # change in y velocity
-        initial_copy[4*n] += time_step * force_vec[4*n] # tempurature evolution
-
-        return initial_copy"""

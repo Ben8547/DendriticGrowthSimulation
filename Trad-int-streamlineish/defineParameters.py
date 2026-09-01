@@ -100,11 +100,11 @@ params = { # create a dictionary to hold parameters
     'blob_scale': 1/30., #0.08
     'num_lattice_points': int(1e6),
     #"angle" : np.pi/2, # angle of the sector from which the electric field may be transmitted
-    "viscosity_multiplier": np.genfromtxt("Visc.txt",float),#2.5
+    #"viscosity_multiplier": np.genfromtxt("Visc.txt",float),#2.5
 
     # Lenard-Jones
 
-    "LJ-Well_depth" : np.genfromtxt("Hamaker.txt",float)
+    #"LJ-Well_depth" : np.genfromtxt("Hamaker.txt",float)
 
 }
 
@@ -137,14 +137,14 @@ params["k"] = 420./params['L_x']; # !!! Heat transfer coefficient [W/m^2K] from 
 params['alpha'] = (rand(params['n']) * 5e-11)  #0.5e5 * np.ones(params['n']) #rand(params['n']) * 1e5 #; I'm believe Sam had this set to be random values so simulate each nanoparticle having unique charges, let's keep it consistant for testing purposes at least
 params['eps_0'] = 8.854e-12
 params["Average_particle_Radius"] = params["elec_transfer_radius"]/2. # since the particles must touch for electric transfer
-params["Hamaker Constant"] = np.genfromtxt("Hamaker.txt",float) #6. #1. # van der Waals force constant - depends upon material
+#params["Hamaker Constant"] = np.genfromtxt("Hamaker.txt",float) #6. #1. # van der Waals force constant - depends upon material
 params['Hamaker_Sample_Size'] = 10
 
 #--------------------------------
 # Drag Force Parameters
 #--------------------------------
 
-params['eta'] = 25.#8.#2.5 #1 # viscosity
+params['eta'] = 20.#8.#2.5 #1 # viscosity
 params["Cd"] = 50. # 1.8e4 # Drag Coefficient
 
 params["density_strength"] = .05
@@ -164,7 +164,7 @@ params["LJ - Sigma"] = 2.**(5./6.) * params['Average_particle_Radius'] # set ide
 #--------------------------------
 params['num_e'] = 20 #100 # Number of electrons to simulate
 params['Rt'] = 1 # Rt is the tunnelling resistance amplitude (assumed the same for all islands)
-params['lambda'] = 4. #2. # effective tunneling length
+params['lambda'] = 1.5 #2. # effective tunneling length
 params['steps'] = 120
 
 #--------------------------------
@@ -217,7 +217,7 @@ if not params['is_Voltage_constant']:
 # File Settings
 #--------------------------------
 
-params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{params['viscosity_multiplier']}_vdW-{params['Hamaker Constant']}_Ly-{params["L_y"]}"
+#params["filename"] = f"dendrite_growth_simulation-pulses-newcurrent-{params['num_e']}_electrons-visc-{params['viscosity_multiplier']}_vdW-{params['Hamaker Constant']}_Ly-{params["L_y"]}"
 
 params["seed"] = s
 

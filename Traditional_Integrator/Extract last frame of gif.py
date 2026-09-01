@@ -35,13 +35,18 @@ def extract_last_frame_mp4(video_path, output_path):
 
 if __name__ == "__main__":
     current_dir = os.getcwd()
+    base_name = '/seed-43095-dendrite_growth_simulation-pulses-newcurrent-20_electrons-visc-1.0_vdW-1.0_Ly-20.0-1000particles.mp4'
+    output_path = os.path.join(current_dir, f"{base_name}_last_frame.png")
+    video_path = current_dir+base_name
+    extract_last_frame_mp4(video_path, output_path)
+    
+    if False:
+        for filename in os.listdir(current_dir):
+            if filename.lower().endswith(".mp4"):
+                video_path = os.path.join(current_dir, filename)
 
-    for filename in os.listdir(current_dir):
-        if filename.lower().endswith(".mp4"):
-            video_path = os.path.join(current_dir, filename)
+                # Create output filename
+                base_name = os.path.splitext(filename)[0]
+                output_path = os.path.join(current_dir, f"{base_name}_last_frame.png")
 
-            # Create output filename
-            base_name = os.path.splitext(filename)[0]
-            output_path = os.path.join(current_dir, f"{base_name}_last_frame.png")
-
-            extract_last_frame_mp4(video_path, output_path)
+                extract_last_frame_mp4(video_path, output_path)

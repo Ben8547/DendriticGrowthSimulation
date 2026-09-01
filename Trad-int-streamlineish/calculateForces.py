@@ -4,19 +4,17 @@ import numpy as np
 from numpy.random import randint
 from defineParameters import params
 #from time import sleep # for debugging
-from viscosity_field import make_globular_indicator, viscocity_gradient, Void_potential
 from scipy.spatial import cKDTree # makes spatial searches much faster
 from scipy.ndimage import gaussian_filter
 from scipy.signal import fftconvolve
 from scipy.interpolate import RegularGridInterpolator
 
 
-ind_func = make_globular_indicator() # get a function to check viscocity state; index function of the void set
 ''' We need a function that creates a potential preventing entry into the regions - as you enter the region - it needs to act like a hole in the simulation domain - a wall
 We could use some repelling force like 1/r or 1/r^2 but this might make the ODE stiff; we would also need to define the boundary of the region which is difficult. We could also we a very strong force field within the void, pointing outward but this would also
 potentially cause particles to be shot out of the void which is not realistic, we only want to prevent entry. Another idea is to create some point at the center of the void and have an exponentially decaying force field eminate from that point.
 Then we likely would not have the shooting motion, but we would not have such a clear barrier to entry.'''
-void_barrier_force = Void_potential(ind_func)
+#void_barrier_force = Void_potential(ind_func)
 
 r = params["elec_transfer_radius"]
 
@@ -27,7 +25,7 @@ rand_dirs_global_x, rand_dirs_global_y = None, None
 
 alpha = params["alpha"]
 
-def calculate_forces(t, states, params,Hamaker,Visc,V_func = params["V_func"], resist=1.):
+def calculate_forces(t, states, params, wpa, ind_func, V_func = params["V_func"], resist=1.):
     """
     Python translation of MATLAB calculateForces.m
     Computes the time derivative dx/dt for all particle states.
@@ -65,21 +63,21 @@ def calculate_forces(t, states, params,Hamaker,Visc,V_func = params["V_func"], r
     # Turn the points into a KDTree for easy spatial search
     coords = column_stack((x_p, y_p))
 
-    Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
+    #Tree = cKDTree(coords) # search tree - should speed up later distance dependant force computations
 
     #tree_data = (inside,is_void,out_void)
 
     # ------------------------
     # Forces
     # ------------------------
-    Fa_x = applied_force(n, coords, Tree, params["alpha"], Volt, params["L_x"],t, use_chain=False)
+    Fa_x = applied_force(n, coords, params["alpha"], params["L_x"], Volt, use_chain=False)
     #F_vdWx, F_vdWy = vdW_Force_AND_Dipole_Force(coords,Tree,A=Hamaker)
-    Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["Cd"], Visc)
+    Fd_x, Fd_y = drag_force(x_p, y_p, x_v, y_v, params["Cd"], ind_func)
     Ft_x, Ft_y = temperature_fluctuations(
         n, eta, params["T_coeff"], T, rand_dirs_global_x, rand_dirs_global_y
     )
     F_barrier_x, F_barrier_y = void_potential(x_p,y_p)
-    F_pin_x, F_pin_y = pinning_force(x_p,y_p)
+    F_pin_x, F_pin_y = pinning_force(x_p,y_p,wpa)
     F_resid_x, F_resid_y = residual_force_convolved(x_p,y_p,params["L_x"],params['L_y'])
 
     if True: # switch the L-ennard-Jones potential on or off
@@ -146,7 +144,7 @@ def density_modulated_force(x, y, tree):
 
     return Force_modifier
 
-def applied_force(n, coords, kdTree, alpha, V, Lx, t, use_chain = True): # (From Electric Field)
+def applied_force(n, coords, alpha, Lx, Volt, use_chain = True): # (From Electric Field)
     # Initialize force to zero
 
     Fa_x = zeros(n)
@@ -163,48 +161,11 @@ def applied_force(n, coords, kdTree, alpha, V, Lx, t, use_chain = True): # (From
     if not use_chain: # Sam's orginal code; debug gate
         Fa_x[inside] = alpha[inside] * Volt / ((0.5) * Lx)
         return Fa_x * 1e15
-
-    else: # debug gate
-        # Apply scaling only to particles within [0,Lx]
-        # only apply force to particle inside of a void
-
-        #inside, is_void, out_void = treeData
-        void_indices =  where(inside)[0] #& is_void)[0] #& is_void # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
-        
-        '''
-        This section deals in adding back a force to those particles inside of the void if there 
-        - there a electromagnetic edge effects that we will ignore for now (i.e. purterbations to the field at the edge of a conductor)
-        We will set some radius (in params) for which there must be a particle *behind* the current particle in order for the field to proagate to the current particle
-        If this condition is met, we will add the force back.
-        '''
-        force_val = alpha * Volt / (0.5 * Lx)
-
-        #Fa_x = where( inside & ~is_void ,force_val,0.) # set force not in void to the deisred value
-        Fa_x = zeros_like(force_val)
-
-        # Identify indices of particles in a void
-        #void_indices =  where(inside & is_void)[0] # converts the boolean array to an array of indicies at which the boolean array was true; find the indicies of the particles inside of the voids
-        
-        # query_ball_point finds all particles within radius 'r' for each void particle
-        neighbors_list = kdTree.query_ball_point(coords[void_indices], r) # this returns an array of lists. The list in the ith element of the array contains the indicies of the points within a distance r of the ith particle
-        #_, neighbors_list = kdTree.query(coords[void_indices], k=20, distance_upper_bound=r) # this gives a rectangluar array which is preffered for the below usage; max number of neighbors is 20
-        #neighbors_list[neighbors_list == 350] = 0 # fix the padding
-
-        for i, void_idx in enumerate(void_indices):
-            # neighbors_list[i] contains indices of all particles within radius r
-            potential_neighbors =  array(neighbors_list[i]) # neigbors of the ith particle
-            
-            # only care about neighbors that are strictly behind (smaller x). also exclude the particle itself (distance 0)
-            is_behind = x_p[potential_neighbors] < x_p[void_idx]
     
-            
-            if  any(is_behind):
-                Fa_x[void_idx] = force_val[void_idx]
-        Fa_x[void_indices] = force_val[void_indices]
-                    
-        return Fa_x * 1e15 * modifier # Sam oringally had the charge at 10^5 C - this was rediculous. Instead I scale the force directly so that I can use a more realistic charge across all forces.
+    else:
+        raise ProcessLookupError("Depreciated")
 
-def drag_force(x, y, x_v, y_v, Cd,Visc_mult):
+def drag_force(x, y, x_v, y_v, Cd, ind_func):
 
     p = params['eta']
 
